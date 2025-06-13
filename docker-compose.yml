@@ -30,21 +30,6 @@ services:
     networks:
       - app-network
 
-  ml-service:
-    build: ./machine-learning/collaborative-learning  # Path sudah benar
-    container_name: ml-service
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - FLASK_ENV=production
-      - FLASK_PORT=5000
-    expose:
-      - "5000"
-    # PERBAIKAN: Sesuaikan path volume mounting
-    volumes:
-      - ./machine-learning/collaborative-learning:/code  # Path sudah benar
-    networks:
-      - app-network
 
   nginx-proxy:
     image: nginx:alpine
@@ -57,7 +42,6 @@ services:
     depends_on:
       - frontend
       - backend
-      - ml-service
     networks:
       - app-network
 
