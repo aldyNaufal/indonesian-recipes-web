@@ -1,11 +1,12 @@
 # Core dependencies
 Flask==2.3.3
 Flask-CORS==4.0.0
+Werkzeug==2.3.7
 pandas==2.1.3
 numpy==1.24.3
 scikit-learn==1.3.2
 tensorflow==2.15.0
-Werkzeug==2.3.7
+keras==2.15.0
 
 # Development
 python-dotenv==1.0.0
@@ -19,11 +20,13 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 
 # Compatibility fixes
-keras==2.15.0
 protobuf==3.20.3
 
 # Text preprocessing (untuk Bahasa Indonesia)
 Sastrawi==1.0.1
 
-# Server (optional untuk ASGI, biasanya dipakai jika pakai FastAPI bukan Flask)
-uvicorn==0.27.1
+# Optional (hanya jika pakai FastAPI, bisa dihapus kalau tidak digunakan)
+# uvicorn==0.27.1
+
+# Model persistence
+joblib

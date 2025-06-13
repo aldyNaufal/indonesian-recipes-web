@@ -8,6 +8,9 @@ from datetime import datetime
 import os
 from werkzeug.exceptions import BadRequest, InternalServerError
 import traceback
+import joblib
+
+
 
 # Import class yang sudah Anda buat
 from services.recipe_recommender import EnhancedIndonesianRecipeRecommender
@@ -21,23 +24,63 @@ CORS(app)  # Enable CORS untuk semua endpoint
 
 # Global variables
 recommender = None
-MODEL_PATH = "models/fix_model.pkl"
-DATA_PATH = "data/data_recipes_cleaned.csv"
+model = None
+model_loaded = False
 
 def load_model():
-    """Load model yang sudah ditraining"""
-    global recommender
+    """Load model dengan multiple fallback methods"""
+    global model, model_loaded
+    
+    model_path = 'models/fix_model.pkl'
+    
+    if not os.path.exists(model_path):
+        logger.error(f"❌ Model file tidak ditemukan: {model_path}")
+        return False
+    
+    # Cek ukuran file
+    file_size = os.path.getsize(model_path)
+    logger.info(f"📊 Ukuran file model: {file_size} bytes")
+    
+    if file_size == 0:
+        logger.error("❌ Model file kosong!")
+        return False
+    
     try:
-        if os.path.exists(MODEL_PATH):
-            recommender = EnhancedIndonesianRecipeRecommender()
-            recommender.load_model(MODEL_PATH)
-            logger.info("✅ Model berhasil dimuat")
+        logger.info(f"📂 Memuat model dari {model_path}...")
+        
+        # Method 1: Coba dengan pickle biasa
+        try:
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+            logger.info("✅ Model berhasil dimuat dengan pickle!")
+            model_loaded = True
             return True
-        else:
-            logger.error(f"❌ Model file tidak ditemukan: {MODEL_PATH}")
-            return False
+        except Exception as e1:
+            logger.warning(f"⚠️ Pickle gagal: {e1}")
+        
+        # Method 2: Coba dengan joblib
+        try:
+            model = joblib.load(model_path)
+            logger.info("✅ Model berhasil dimuat dengan joblib!")
+            model_loaded = True
+            return True
+        except Exception as e2:
+            logger.warning(f"⚠️ Joblib gagal: {e2}")
+        
+        # Method 3: Coba baca raw bytes untuk debug
+        try:
+            with open(model_path, 'rb') as f:
+                first_bytes = f.read(10)
+                logger.info(f"🔍 10 byte pertama: {first_bytes}")
+                logger.info(f"🔍 Sebagai string: {first_bytes.decode('utf-8', errors='ignore')}")
+        except Exception as e3:
+            logger.error(f"❌ Tidak bisa membaca file: {e3}")
+        
+        logger.error("❌ Semua method loading gagal!")
+        return False
+        
     except Exception as e:
-        logger.error(f"❌ Error loading model: {str(e)}")
+        logger.error(f"❌ Error loading model: {e}")
         return False
 
 def validate_request_data(data, required_fields):
@@ -938,9 +981,4 @@ if __name__ == '__main__':
     
     # Jalankan Flask app
     logger.info("🚀 Starting Recipe Recommendation API...")
-    app.run(
-        host='0.0.0.0',  # Agar bisa diakses dari luar
-        port=5000,
-        debug=False,  # Set False untuk production
-        threaded=True
-    )
+    app.run(host='0.0.0.0', port=5000, debug=False)
