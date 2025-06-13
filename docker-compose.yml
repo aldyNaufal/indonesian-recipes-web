@@ -12,8 +12,7 @@ services:
       - CORS_ORIGIN=https://werecooked.my.id
       - MONGO_URI=mongodb://mongo:ylhJLGusxxhZcKarniyDYZyWwtFmxbxF@crossover.proxy.rlwy.net:50144
       - JWT_SECRET=5799f39d3045afe7aacdeac7e65888e53e1efb824b9c46a6c306dd5b71a89a488ada8049ec4c4736cb064877ea345c4c0b0449adad92e28124739351db7c2799
-      - ML_API_BASE_URL=https://brohuy-recipes-recommendation-models.hf.space/
-      - FLASK_API_BASE_URL=http://ml-service:5000
+      - ML_API_BASE_URL=http://ml-service:5000
     expose:
       - "3000"
     volumes:
@@ -44,9 +43,9 @@ services:
       - FLASK_ENV=production
       - FLASK_PORT=5000
     expose:
-      - "5000"  # Changed from 7860 to 5000 to match your .env
+      - "5000"
     volumes:
-      - ./machine-learning:/code
+      - ./machine-learning/collaborative-learning:/code
     networks:
       - app-network
 
