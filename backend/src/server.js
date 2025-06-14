@@ -12,10 +12,10 @@ const { connectToMongo } = require('./services/db');
 
 const init = async () => {
   await connectToMongo();
-
+  
   const server = Hapi.server({
     port: process.env.PORT || 3000,
-    host: 'localhost',
+    host: '0.0.0.0',  // <-- UBAH dari 'localhost' ke '0.0.0.0'
     routes: {
       cors: {
         origin: ['*'],
@@ -23,6 +23,7 @@ const init = async () => {
     },
   });
 
+  
   server.route([
     ...authRoutes,
     ...userRoutes,

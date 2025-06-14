@@ -11,8 +11,6 @@ services:
       - MONGO_URI=mongodb://mongo:ylhJLGusxxhZcKarniyDYZyWwtFmxbxF@crossover.proxy.rlwy.net:50144
       - JWT_SECRET=5799f39d3045afe7aacdeac7e65888e53e1efb824b9c46a6c306dd5b71a89a488ada8049ec4c4736cb064877ea345c4c0b0449adad92e28124739351db7c2799
       - ML_API_BASE_URL=http://ml-service:5000
-    expose:
-      - "3000"
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
