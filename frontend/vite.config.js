@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
-const baseUrl =
-  process.env.NODE_ENV === "production" ? "/were-cooked-frontend/" : "/";
+
+
+const baseUrl = "/";  // <-- Selalu gunakan root path
 
 export default defineConfig({
   plugins: [
