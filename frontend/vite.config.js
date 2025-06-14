@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 
-const baseUrl = "/";  // <-- Selalu gunakan root path
+const baseUrl = process.env.VITE_BASE_URL || "/";  // <-- Selalu gunakan root path
 
 export default defineConfig({
   plugins: [

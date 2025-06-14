@@ -5,7 +5,8 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import App from "./App.jsx";
 import "./index.css";
 
-const baseUrl = import.meta.env.MODE === "production" ? "/were-cooked-frontend" : "/";
+// Gunakan environment variable atau default ke "/"
+const baseUrl = import.meta.env.VITE_BASE_URL || "/";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
