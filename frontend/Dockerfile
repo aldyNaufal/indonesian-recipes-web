@@ -12,7 +12,7 @@ FROM nginx:alpine
 # Copy built files dari builder stage - PERBAIKI INI
 # COPY --from=builder /app/dist /usr/share/nginx/html
 # atau jika build folder bernama 'build':
-COPY --from=builder /app/build /usr/share/nginx/html
+COPY --from=builder /app/docs /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
