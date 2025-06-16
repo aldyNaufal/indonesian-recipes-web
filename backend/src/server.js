@@ -17,14 +17,77 @@ const init = async () => {
     host: '0.0.0.0',
     routes: {
       cors: {
-        origin: ['*'],
-        headers: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        exposedHeaders: ['WWW-Authenticate', 'Server-Authorization'],
-        additionalExposedHeaders: ['Accept', 'Authorization', 'Content-Type', 'If-None-Match'],
-        maxAge: 60,
+        origin: ['*'], // Atau bisa spesifik: ['http://localhost:5173']
+        headers: [
+          'Accept',
+          'Authorization', 
+          'Content-Type',
+          'If-None-Match',
+          'Origin',
+          'X-Requested-With'
+        ],
+        exposedHeaders: [
+          'WWW-Authenticate', 
+          'Server-Authorization'
+        ],
+        additionalExposedHeaders: [
+          'Accept', 
+          'Authorization', 
+          'Content-Type', 
+          'If-None-Match'
+        ],
+        maxAge: 86400, // 24 hours
         credentials: true
       },
+      validate: {
+        options: {
+          abortEarly: false
+        }
+      }
     },
+  });
+
+  // Plugin untuk menangani CORS secara lebih baik
+  await server.register({
+    plugin: {
+      name: 'cors-plugin',
+      register: async function (server, options) {
+        server.ext('onPreResponse', (request, h) => {
+          const response = request.response;
+          
+          if (response.isBoom) {
+            // Handle CORS for error responses
+            response.output.headers['Access-Control-Allow-Origin'] = '*';
+            response.output.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+            response.output.headers['Access-Control-Allow-Headers'] = 'Accept, Authorization, Content-Type, If-None-Match, Origin, X-Requested-With';
+            response.output.headers['Access-Control-Allow-Credentials'] = 'true';
+          } else {
+            // Handle CORS for successful responses
+            response.header('Access-Control-Allow-Origin', '*');
+            response.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            response.header('Access-Control-Allow-Headers', 'Accept, Authorization, Content-Type, If-None-Match, Origin, X-Requested-With');
+            response.header('Access-Control-Allow-Credentials', 'true');
+          }
+          
+          return h.continue;
+        });
+      }
+    }
+  });
+
+  // Handle OPTIONS requests (preflight)
+  server.route({
+    method: 'OPTIONS',
+    path: '/{any*}',
+    handler: (request, h) => {
+      return h.response()
+        .code(200)
+        .header('Access-Control-Allow-Origin', '*')
+        .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        .header('Access-Control-Allow-Headers', 'Accept, Authorization, Content-Type, If-None-Match, Origin, X-Requested-With')
+        .header('Access-Control-Allow-Credentials', 'true')
+        .header('Access-Control-Max-Age', '86400');
+    }
   });
 
   // Add health check endpoint

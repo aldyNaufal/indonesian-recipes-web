@@ -1,54 +1,64 @@
-import HomePage from "./pages/Home";
+// App.js
+import { Routes, Route, useLocation} from "react-router-dom";
+import { useEffect } from "react";
+import { SearchProvider } from "./context/SearchContext";
+import { AuthProvider } from "./context/AuthContext"; // Import AuthProvider
+import HomePage from "./views/HomeView";
+import RecipePage from "./views/RecipesView";
 import DetailPage from "./pages/Detail";
 import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/About";
-import Layout from "./components/Layout";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
-import { SearchProvider } from "./context/SearchContext";
-import "./index.css";
 import BookmarkPage from "./pages/Bookmark";
 import ProfilePage from "./pages/Profile";
 import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
 import EditProfilePage from "./pages/EditProfile";
 import PreferencesPage from "./pages/PreferencesPage";
-import { useEffect } from "react";
-// import UbahPassword from "./pages/UbahPassword";
+import Layout from "./components/Layout";
+import "./index.css";
 
-export default function App() {
+// Komponen untuk menangani scroll behavior
+function ScrollToTop() {
   const location = useLocation();
-
+  
   useEffect(() => {
-    if (!document.startViewTransition) return;
-
-    const originalScrollTo = window.scrollTo;
+    if (!document.startViewTransition) {
+      window.scrollTo(0, 0);
+      return;
+    }
+    
     document.startViewTransition(() => {
-      // biar halaman otomatis ke atas saat transisi
-      originalScrollTo(0, 0);
+      window.scrollTo(0, 0);
     });
   }, [location.pathname]);
+  
+  return null;
+}
+
+export default function App() {
   return (
-    <SearchProvider>
-      <Layout>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/resep/:id" element={<DetailPage />} />
-          <Route path="/bookmark" element={<BookmarkPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+    <AuthProvider> {/* Bungkus dengan AuthProvider */}
+      <SearchProvider>
+        <ScrollToTop />
+        <Routes>
+          {/* Routes tanpa Layout */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/ubah-profil" element={<EditProfilePage />} />
-          <Route path="/set-preferences" element={<PreferencesPage />} />
-          {/* <Route path="/ubah-password" element={<UbahPassword />} /> */}
-          <Route path="*" element={<NotFound />} />
+          
+          {/* Routes dengan Layout */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="resep" element={<RecipePage />} />
+            <Route path="resep/:id" element={<DetailPage />} />
+            <Route path="bookmark" element={<BookmarkPage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="ubah-profil" element={<EditProfilePage />} />
+            <Route path="set-preferences" element={<PreferencesPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
-      </Layout>
-    </SearchProvider>
+      </SearchProvider>
+    </AuthProvider>
   );
 }

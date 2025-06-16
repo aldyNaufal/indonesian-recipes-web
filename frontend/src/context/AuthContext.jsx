@@ -1,72 +1,70 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const navigate = useNavigate();
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-  const login = (userData, tokenData) => {
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", tokenData);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Initialize auth state dari localStorage saat app pertama kali load
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Error parsing saved user data:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  const login = (userData, userToken) => {
     setUser(userData);
-    setToken(tokenData);
-
-    if (!userData.has_set_preferences) {
-      // Jika pengguna baru, arahkan ke halaman pengaturan preferensi.
-      navigate("/set-preferences");
-    } else {
-      // Jika pengguna lama, arahkan ke halaman utama.
-      navigate("/");
-    }
-  };
-
-  const markPreferencesAsSet = () => {
-    if (user) {
-      const updatedUser = { ...user, has_set_preferences: true };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
-    }
+    setToken(userToken);
+    localStorage.setItem('token', userToken);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
     setUser(null);
     setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
-  /**
-   * Memperbarui data pengguna di seluruh aplikasi setelah edit profil.
-   * Ini adalah implementasi dari rekomendasi perbaikan kita.
-   */
-  const updateUser = (newUserData) => {
-    const updatedUser = { ...user, ...newUserData };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+    localStorage.setItem('user', JSON.stringify(updatedUserData));
   };
 
-  useEffect(() => {
-    // Sinkronisasi antar tab browser
-    const syncAuth = () => {
-      setUser(JSON.parse(localStorage.getItem("user")));
-      setToken(localStorage.getItem("token"));
-    };
-    window.addEventListener("storage", syncAuth);
-    return () => window.removeEventListener("storage", syncAuth);
-  }, []);
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    logout,
+    updateUser,
+    isAuthenticated: !!token
+  };
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, login, logout, updateUser, markPreferencesAsSet }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
+};
