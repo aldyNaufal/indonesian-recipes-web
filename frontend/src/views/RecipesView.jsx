@@ -23,7 +23,9 @@ const RecipeFilterApp = () => {
   const [afterFilters, setAfterFilters] = useState(0);
 
   // API Configuration
-  const API_BASE_URL = 'http://localhost:3000'; // Adjust this to your backend URL
+  const API_BASE_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://werecooked.my.id' 
+    : 'http://localhost:3000';
 
   // Predefined additional ingredients (non-main ingredients)
   const additionalIngredients = [
@@ -159,44 +161,66 @@ const RecipeFilterApp = () => {
       setError('Pilih setidaknya satu bahan untuk mendapat rekomendasi');
       return;
     }
-
+    
     setLoading(true);
     setError('');
-
-    try {
-      const payload = {
-        ingredients: allIngredients,
-        ...(complexityFilter && { complexity_filter: complexityFilter }),
-        ...(minRating && { min_rating: parseFloat(minRating) }),
-        top_n: topN
-      };
-
-      const response = await fetch(`${API_BASE_URL}/ml/recommend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Gagal mendapat rekomendasi');
+    
+    const maxRetries = 3;
+    const retryDelay = 5000; // 5 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const payload = {
+          ingredients: allIngredients,
+          ...(complexityFilter && { complexity_filter: complexityFilter }),
+          ...(minRating && { min_rating: parseFloat(minRating) }),
+          top_n: topN
+        };
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        const response = await fetch(`${API_BASE_URL}/ml/recommend`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Gagal mendapat rekomendasi');
+        }
+        
+        setRecommendations(data.recommendations || []);
+        setApiMessage(data.message || '');
+        setAfterFilters(data.after_filters || 0);
+        setHasSearched(true);
+        break; // Success, exit retry loop
+        
+      } catch (err) {
+        console.error(`Attempt ${attempt} failed:`, err);
+        
+        if (attempt === maxRetries) {
+          if (err.name === 'AbortError') {
+            setError('Request timeout - Hugging Face model mungkin sedang cold start, coba lagi dalam beberapa menit');
+          } else {
+            setError(err.message || 'Terjadi kesalahan saat mengambil rekomendasi');
+          }
+        } else {
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
       }
-
-      setRecommendations(data.recommendations || []);
-      setApiMessage(data.message || '');
-      setAfterFilters(data.after_filters || 0);
-      setHasSearched(true);
-    } catch (err) {
-      setError(err.message || 'Terjadi kesalahan saat mengambil rekomendasi');
-      console.error('Error getting recommendations:', err);
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
-
   // Clear all filters
   const clearAllFilters = () => {
     setSelectedIngredients([]);
