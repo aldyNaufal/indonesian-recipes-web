@@ -6,7 +6,7 @@ import food from '../assets/cook.png'; // Pastikan path ini benar
 
 const HomeView = () => {
   // States
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [userName, setUserName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState([]);

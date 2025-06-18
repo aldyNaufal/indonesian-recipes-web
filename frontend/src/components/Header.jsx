@@ -3,7 +3,7 @@ import { User, Bookmark, LogOut } from 'lucide-react';
 import logo from "../assets/Group59.svg"
 
 function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true); // Simulasi status login
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Simulasi status login
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 

@@ -1,243 +1,140 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Clock, Users } from 'lucide-react';
+import { Search, Filter, Clock, Users, Loader2, Star, ChefHat, RefreshCw } from 'lucide-react';
+import { publicApiGet } from '../utils/api';
+
 
 const RecipeFilterApp = () => {
-  // Data resep dengan ingredients dan kategori
-  const recipes = [
-    {
-      id: 1,
-      name: "Nasi Goreng Kampung",
-      image: "🍛",
-      ingredients: ["Nasi", "Telur", "Cabai", "Bawang Merah", "Kecap Manis"],
-      category: "Nasi",
-      cookTime: "15 menit",
-      servings: 2,
-      description: "Nasi goreng khas Indonesia dengan bumbu tradisional"
-    },
-    {
-      id: 2,
-      name: "Ayam Bakar Madu",
-      image: "🍗",
-      ingredients: ["Ayam", "Madu", "Kecap Manis", "Bawang Putih", "Jahe"],
-      category: "Ayam",
-      cookTime: "45 menit",
-      servings: 4,
-      description: "Ayam bakar dengan glazing madu yang manis"
-    },
-    {
-      id: 3,
-      name: "Soto Ayam",
-      image: "🍲",
-      ingredients: ["Ayam", "Kunyit", "Bawang Merah", "Bawang Putih", "Serai"],
-      category: "Sup",
-      cookTime: "60 menit",
-      servings: 4,
-      description: "Sup ayam tradisional Indonesia yang hangat"
-    },
-    {
-      id: 4,
-      name: "Gado-Gado",
-      image: "🥗",
-      ingredients: ["Tahu", "Tempe", "Kacang Tanah", "Sayuran", "Lontong"],
-      category: "Salad",
-      cookTime: "20 menit",
-      servings: 2,
-      description: "Salad Indonesia dengan saus kacang"
-    },
-    {
-      id: 5,
-      name: "Rendang Daging",
-      image: "🥩",
-      ingredients: ["Daging Sapi", "Santan", "Cabai", "Serai", "Daun Jeruk"],
-      category: "Daging",
-      cookTime: "180 menit",
-      servings: 6,
-      description: "Rendang daging sapi khas Padang"
-    },
-    {
-      id: 6,
-      name: "Mie Ayam",
-      image: "🍜",
-      ingredients: ["Mie", "Ayam", "Bakso", "Sawi", "Bawang Goreng"],
-      category: "Mie",
-      cookTime: "30 menit",
-      servings: 1,
-      description: "Mie ayam dengan topping lengkap"
-    },
-    {
-      id: 7,
-      name: "Ikan Bakar",
-      image: "🐟",
-      ingredients: ["Ikan", "Cabai", "Tomat", "Bawang Merah", "Jeruk Nipis"],
-      category: "Ikan",
-      cookTime: "25 menit",
-      servings: 2,
-      description: "Ikan bakar dengan sambal segar"
-    },
-    {
-      id: 8,
-      name: "Sayur Asem",
-      image: "🥬",
-      ingredients: ["Sayuran", "Asam Jawa", "Cabai", "Gula Merah", "Garam"],
-      category: "Sayur",
-      cookTime: "30 menit",
-      servings: 4,
-      description: "Sayur kuah asam segar"
-    }
-  ];
-
-  // Daftar bahan utama (kategori protein) dengan icon
-  const mainIngredients = [
-    { name: "Ayam", icon: "🐔" },
-    { name: "Ikan", icon: "🐟" },
-    { name: "Kambing", icon: "🐐" },
-    { name: "Sapi", icon: "🐄" },
-    { name: "Tahu", icon: "🧈" },
-    { name: "Telur", icon: "🥚" },
-    { name: "Tempe", icon: "🟫" },
-    { name: "Udang", icon: "🦐" }
-  ];
-
-  // Daftar bahan tambahan dengan icon
-  const additionalIngredients = [
-    { name: "Nasi", icon: "🍚" },
-    { name: "Mie", icon: "🍜" },
-    { name: "Santan", icon: "🥥" },
-    { name: "Cabai", icon: "🌶️" },
-    { name: "Bawang Merah", icon: "🧅" },
-    { name: "Bawang Putih", icon: "🧄" },
-    { name: "Tomat", icon: "🍅" },
-    { name: "Sayuran", icon: "🥬" },
-    { name: "Kecap Manis", icon: "🍯" },
-    { name: "Garam", icon: "🧂" },
-    { name: "Madu", icon: "🍯" },
-    { name: "Kunyit", icon: "🟡" },
-    { name: "Jahe", icon: "🫚" },
-    { name: "Serai", icon: "🌿" },
-    { name: "Daun Jeruk", icon: "🍃" },
-    { name: "Kacang Tanah", icon: "🥜" },
-    { name: "Lontong", icon: "🍘" },
-    { name: "Bakso", icon: "⚪" },
-    { name: "Sawi", icon: "🥬" },
-    { name: "Bawang Goreng", icon: "🧅" },
-    { name: "Jeruk Nipis", icon: "🍋" },
-    { name: "Asam Jawa", icon: "🟤" },
-    { name: "Gula Merah", icon: "🟫" }
-  ];
-
-  const allCategories = [...new Set(recipes.map(recipe => recipe.category))].sort();
-
-  // State untuk filter
-  const [selectedIngredients, setSelectedIngredients] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  // State management
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
   const [userIngredients, setUserIngredients] = useState([]);
   const [ingredientInput, setIngredientInput] = useState('');
+  const [complexityFilter, setComplexityFilter] = useState('');
+  const [minRating, setMinRating] = useState('');
+  const [topN, setTopN] = useState(10);
+  const [recommendations, setRecommendations] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [error, setError] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [apiMessage, setApiMessage] = useState('');
+  const [afterFilters, setAfterFilters] = useState(0);
 
-  // Shuffle array untuk menampilkan resep secara random
-  const shuffleArray = (array) => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  // API Configuration
+  const API_BASE_URL = 'http://localhost:3000'; // Adjust this to your backend URL
+
+  // Predefined additional ingredients (non-main ingredients)
+  const additionalIngredients = [
+    { name: 'bawang merah', icon: '🧅' },
+    { name: 'bawang putih', icon: '🧄' },
+    { name: 'cabai', icon: '🌶️' },
+    { name: 'cabai rawit', icon: '🌶️' },
+    { name: 'cabai merah', icon: '🔴' },
+    { name: 'tomat', icon: '🍅' },
+    { name: 'wortel', icon: '🥕' },
+    { name: 'kentang', icon: '🥔' },
+    { name: 'brokoli', icon: '🥦' },
+    { name: 'bayam', icon: '🥬' },
+    { name: 'jagung', icon: '🌽' },
+    { name: 'kacang panjang', icon: '🫘' },
+    { name: 'santan', icon: '🥥' },
+    { name: 'kecap manis', icon: '🍯' },
+    { name: 'sambal', icon: '🔥' },
+    { name: 'keju', icon: '🧀' },
+    { name: 'susu', icon: '🥛' },
+    { name: 'jahe', icon: '🫚' },
+    { name: 'kunyit', icon: '🟡' },
+    { name: 'kemiri', icon: '🌰' },
+    { name: 'daun salam', icon: '🍃' },
+    { name: 'serai', icon: '🌿' },
+    { name: 'penyedap rasa', icon: '🧂' }
+  ];
+
+  // Fetch categories from backend
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      
+      // Using the API helper instead of direct fetch
+      const response = await publicApiGet('/categories');
+      
+      // Debug: Log the response to see the actual structure
+      console.log('Categories API response:', response);
+      
+      // Check if response exists
+      if (!response) {
+        throw new Error('No data received from API');
+      }
+      
+      // Handle the actual response structure: { data: [...], error: false }
+      let categoriesData;
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Response has { data: [...] } structure (this is your actual format)
+        categoriesData = response.data;
+      } else if (Array.isArray(response)) {
+        // If response is directly an array
+        categoriesData = response;
+      } else if (response.categories && Array.isArray(response.categories)) {
+        // If response has { categories: [...] } structure
+        categoriesData = response.categories;
+      } else if (response.categories && typeof response.categories === 'object') {
+        // If response has { categories: {...} } structure (object)
+        const categoryArray = Object.entries(response.categories).map(([key, value]) => ({
+          name: value.name,
+          icon: value.icon,
+          description: value.description,
+          count: value.count,
+          key: key.toLowerCase()
+        }));
+        setCategories(categoryArray);
+        return;
+      } else {
+        throw new Error('Invalid response format from categories API');
+      }
+      
+      // Convert categories data to the format expected by frontend
+      const categoryArray = categoriesData.map((category) => ({
+        name: category.name,
+        icon: category.icon,
+        description: category.description,
+        count: category.count,
+        key: category.id ? category.id.toString().toLowerCase() : category.name.toLowerCase()
+      }));
+      
+      console.log('Processed categories:', categoryArray); // Debug processed data
+      setCategories(categoryArray);
+      
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      console.error('Error details:', err);
+      setError(err.message || 'Gagal mengambil data kategori');
+    } finally {
+      setLoadingCategories(false);
     }
-    return shuffled;
   };
 
-  // Initialize dengan resep random
+  // Load categories on component mount
   useEffect(() => {
-    setFilteredRecipes(shuffleArray(recipes));
+    fetchCategories();
   }, []);
 
-  // Filter recipes berdasarkan ingredients, categories, dan search term
-  useEffect(() => {
-    let filtered = recipes;
-
-    // Gabungkan selected ingredients dengan user ingredients
-    const allSelectedIngredients = [...selectedIngredients];
-
-    // Filter berdasarkan ingredients
-    if (allSelectedIngredients.length > 0) {
-      filtered = filtered.filter(recipe =>
-        allSelectedIngredients.some(ingredient =>
-          recipe.ingredients.some(recipeIngredient =>
-            recipeIngredient.toLowerCase().includes(ingredient.toLowerCase()) ||
-            ingredient.toLowerCase().includes(recipeIngredient.toLowerCase())
-          )
-        )
-      );
-    }
-
-    // Filter berdasarkan categories
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(recipe =>
-        selectedCategories.includes(recipe.category)
-      );
-    }
-
-    // Filter berdasarkan search term
-    if (searchTerm) {
-      filtered = filtered.filter(recipe =>
-        recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.ingredients.some(ingredient =>
-          ingredient.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
-
-    // Jika tidak ada filter yang aktif, tampilkan random
-    if (allSelectedIngredients.length === 0 && selectedCategories.length === 0 && !searchTerm) {
-      filtered = shuffleArray(recipes);
-    }
-
-    setFilteredRecipes(filtered);
-  }, [selectedIngredients, selectedCategories, searchTerm, userIngredients]);
-
-  // Handle main ingredient checkbox change
-  const handleMainIngredientChange = (ingredient) => {
-    setSelectedIngredients(prev =>
+  // Handle ingredient selection
+  const handleIngredientChange = (ingredient) => {
+    setSelectedIngredients(prev => 
       prev.includes(ingredient)
         ? prev.filter(item => item !== ingredient)
         : [...prev, ingredient]
     );
   };
 
-  // Handle additional ingredient checkbox change
-  const handleAdditionalIngredientChange = (ingredient) => {
-    setSelectedIngredients(prev =>
-      prev.includes(ingredient)
-        ? prev.filter(item => item !== ingredient)
-        : [...prev, ingredient]
-    );
-  };
-
-  // Handle category checkbox change
-  const handleCategoryChange = (category) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(item => item !== category)
-        : [...prev, category]
-    );
-  };
-
-  // Clear all filters
-  const clearAllFilters = () => {
-    setSelectedIngredients([]);
-    setSelectedCategories([]);
-    setSearchTerm('');
-    setUserIngredients([]);
-    setIngredientInput('');
-    setFilteredRecipes(shuffleArray(recipes));
-  };
-
-  // Add user ingredient
+  // Add user-typed ingredient
   const addUserIngredient = () => {
-    if (ingredientInput.trim() && !userIngredients.includes(ingredientInput.trim())) {
-      const newIngredient = ingredientInput.trim();
-      setUserIngredients(prev => [...prev, newIngredient]);
-      setSelectedIngredients(prev => [...prev, newIngredient]);
+    const ingredient = ingredientInput.trim().toLowerCase();
+    if (ingredient && !userIngredients.includes(ingredient)) {
+      setUserIngredients(prev => [...prev, ingredient]);
       setIngredientInput('');
     }
   };
@@ -245,19 +142,116 @@ const RecipeFilterApp = () => {
   // Remove user ingredient
   const removeUserIngredient = (ingredient) => {
     setUserIngredients(prev => prev.filter(item => item !== ingredient));
-    setSelectedIngredients(prev => prev.filter(item => item !== ingredient));
   };
 
-  // Handle Enter key press
+  // Handle key press for adding ingredients
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       addUserIngredient();
     }
   };
 
-  // Randomize recipes
-  const randomizeRecipes = () => {
-    setFilteredRecipes(shuffleArray(filteredRecipes));
+  // Get ML recommendations
+  const getMLRecommendations = async () => {
+    const allIngredients = [...selectedIngredients.map(ing => ing.toLowerCase()), ...userIngredients];
+    
+    if (allIngredients.length === 0) {
+      setError('Pilih setidaknya satu bahan untuk mendapat rekomendasi');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const payload = {
+        ingredients: allIngredients,
+        ...(complexityFilter && { complexity_filter: complexityFilter }),
+        ...(minRating && { min_rating: parseFloat(minRating) }),
+        top_n: topN
+      };
+
+      const response = await fetch(`${API_BASE_URL}/ml/recommend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Gagal mendapat rekomendasi');
+      }
+
+      setRecommendations(data.recommendations || []);
+      setApiMessage(data.message || '');
+      setAfterFilters(data.after_filters || 0);
+      setHasSearched(true);
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan saat mengambil rekomendasi');
+      console.error('Error getting recommendations:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedIngredients([]);
+    setUserIngredients([]);
+    setComplexityFilter('');
+    setMinRating('');
+    setTopN(10);
+    setSearchTerm('');
+    setRecommendations([]);
+    setError('');
+    setHasSearched(false);
+    setApiMessage('');
+    setAfterFilters(0);
+  };
+
+  // Filter recommendations based on search term
+  const filteredRecommendations = recommendations.filter(recipe =>
+    recipe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recipe.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recipe.ingredients?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Get complexity color
+  const getComplexityColor = (complexity) => {
+    switch (complexity?.toLowerCase()) {
+      case 'cepat & mudah':
+        return 'bg-green-100 text-green-700';
+      case 'butuh usaha':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'sulit':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  // Get rating stars
+  const getRatingStars = (rating) => {
+    const stars = [];
+    const numRating = typeof rating === 'number' ? rating : parseInt(rating) || 0;
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Star
+          key={i}
+          className={`w-4 h-4 ${i <= numRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+        />
+      );
+    }
+    return stars;
+  };
+
+  // Parse ingredients string to array
+  const parseIngredients = (ingredientsString) => {
+    if (!ingredientsString) return [];
+    return ingredientsString.split('--').filter(ing => ing.trim() !== '');
   };
 
   return (
@@ -269,7 +263,7 @@ const RecipeFilterApp = () => {
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-orange-600">🍳 We're Cooked</h1>
               <span className="text-gray-500">|</span>
-              <span className="text-gray-600">Bahan</span>
+              <span className="text-gray-600">ML Recipe Recommendations</span>
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -293,7 +287,7 @@ const RecipeFilterApp = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
-                    placeholder="Cari resep atau bahan..."
+                    placeholder="Cari resep..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
@@ -308,7 +302,7 @@ const RecipeFilterApp = () => {
                   <div className="flex space-x-2">
                     <input
                       type="text"
-                      placeholder="Ketik bahan (misal: tomat, ayam, nasi)"
+                      placeholder="Ketik bahan (misal: tomat, nasi)"
                       value={ingredientInput}
                       onChange={(e) => setIngredientInput(e.target.value)}
                       onKeyPress={handleKeyPress}
@@ -348,26 +342,51 @@ const RecipeFilterApp = () => {
                 </div>
               </div>
 
-              {/* Bahan Utama */}
+              {/* Main Ingredients from Backend */}
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-800 mb-3">Bahan Utama</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {mainIngredients.map((ingredient) => (
-                    <label key={ingredient.name} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors border border-gray-100">
-                      <input
-                        type="checkbox"
-                        checked={selectedIngredients.includes(ingredient.name)}
-                        onChange={() => handleMainIngredientChange(ingredient.name)}
-                        className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 focus:ring-2"
-                      />
-                      <span className="text-xl">{ingredient.icon}</span>
-                      <span className="text-sm text-gray-700 font-medium">{ingredient.name}</span>
-                    </label>
-                  ))}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-800">Bahan Utama</h3>
+                  {loadingCategories && <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />}
                 </div>
+                
+                {loadingCategories ? (
+                  <div className="text-center py-4">
+                    <div className="text-gray-500">Memuat kategori...</div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {categories.map((category) => (
+                      <label key={category.key} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors border border-gray-100">
+                        <input
+                          type="checkbox"
+                          checked={selectedIngredients.includes(category.key)}
+                          onChange={() => handleIngredientChange(category.key)}
+                          className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 focus:ring-2"
+                        />
+                        <span className="text-xl">{category.icon}</span>
+                        <div className="flex-1">
+                          <span className="text-sm text-gray-700 font-medium">{category.name}</span>
+                          <div className="text-xs text-gray-500">({category.count} resep)</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                
+                {!loadingCategories && categories.length === 0 && (
+                  <div className="text-center py-4">
+                    <div className="text-gray-500 mb-2">Gagal memuat kategori</div>
+                    <button
+                      onClick={fetchCategories}
+                      className="text-orange-500 hover:text-orange-700 text-sm"
+                    >
+                      Coba lagi
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Bahan Tambahan */}
+              {/* Additional Ingredients */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3">Bahan Tambahan</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -376,7 +395,7 @@ const RecipeFilterApp = () => {
                       <input
                         type="checkbox"
                         checked={selectedIngredients.includes(ingredient.name)}
-                        onChange={() => handleAdditionalIngredientChange(ingredient.name)}
+                        onChange={() => handleIngredientChange(ingredient.name)}
                         className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 focus:ring-2"
                       />
                       <span className="text-lg">{ingredient.icon}</span>
@@ -386,8 +405,79 @@ const RecipeFilterApp = () => {
                 </div>
               </div>
 
+              {/* ML Filters */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-800 mb-3">Filter ML</h3>
+                <div className="space-y-4">
+                  {/* Complexity Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tingkat Kesulitan</label>
+                    <select
+                      value={complexityFilter}
+                      onChange={(e) => setComplexityFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                    >
+                      <option value="">Semua Tingkat</option>
+                      <option value="Cepat & Mudah">Cepat & Mudah</option>
+                      <option value="Butuh Usaha">Butuh Usaha</option>
+                      <option value="Sulit">Sulit</option>
+                    </select>
+                  </div>
+
+                  {/* Min Rating */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating Minimum</label>
+                    <select
+                      value={minRating}
+                      onChange={(e) => setMinRating(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                    >
+                      <option value="">Semua Rating</option>
+                      <option value="1">1+ ⭐</option>
+                      <option value="2">2+ ⭐</option>
+                      <option value="3">3+ ⭐</option>
+                      <option value="4">4+ ⭐</option>
+                      <option value="5">5+ ⭐</option>
+                    </select>
+                  </div>
+
+                  {/* Top N */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Jumlah Rekomendasi</label>
+                    <select
+                      value={topN}
+                      onChange={(e) => setTopN(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+                    >
+                      <option value="5">5 resep</option>
+                      <option value="10">10 resep</option>
+                      <option value="15">15 resep</option>
+                      <option value="20">20 resep</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="space-y-3">
+                <button
+                  onClick={getMLRecommendations}
+                  disabled={loading || (selectedIngredients.length === 0 && userIngredients.length === 0)}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Mencari Resep...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChefHat className="w-4 h-4" />
+                      <span>Cari Rekomendasi ML</span>
+                    </>
+                  )}
+                </button>
+                
                 <button
                   onClick={clearAllFilters}
                   className="w-full py-2 px-4 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -405,22 +495,37 @@ const RecipeFilterApp = () => {
               <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
                 <div className="text-6xl mb-4">🍳</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  {(selectedIngredients.length > 0 || selectedCategories.length > 0 || searchTerm) 
-                    ? 'Resep yang Cocok untuk Anda' 
+                  {hasSearched 
+                    ? 'Rekomendasi ML untuk Anda' 
                     : 'Punya bahan apa di kulkas?'}
                 </h2>
                 <p className="text-gray-600">
-                  {(selectedIngredients.length > 0 || selectedCategories.length > 0 || searchTerm)
-                    ? `Ditemukan ${filteredRecipes.length} resep sesuai filter Anda`
-                    : 'Kami akan beri rekomendasi resep sesuai dengan bahan yang kamu punya.'}
+                  {hasSearched
+                    ? apiMessage || `Ditemukan ${filteredRecommendations.length} resep dari Machine Learning`
+                    : 'Pilih bahan yang kamu punya, lalu klik "Cari Rekomendasi ML" untuk mendapat saran resep yang dipersonalisasi.'}
                 </p>
+                {afterFilters > 0 && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    Total resep setelah filter: {afterFilters}
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="text-red-500">⚠️</div>
+                  <p className="text-red-700">{error}</p>
+                </div>
+              </div>
+            )}
+
             {/* Active Filters Display */}
-            {(selectedIngredients.length > 0 || selectedCategories.length > 0) && (
+            {(selectedIngredients.length > 0 || userIngredients.length > 0) && (
               <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
-                <h4 className="font-medium text-gray-800 mb-3">Filter Aktif:</h4>
+                <h4 className="font-medium text-gray-800 mb-3">Bahan Dipilih:</h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedIngredients.map((ingredient) => (
                     <span
@@ -436,15 +541,15 @@ const RecipeFilterApp = () => {
                       </button>
                     </span>
                   ))}
-                  {selectedCategories.map((category) => (
+                  {userIngredients.map((ingredient) => (
                     <span
-                      key={category}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center space-x-2"
+                      key={ingredient}
+                      className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center space-x-2"
                     >
-                      <span>{category}</span>
+                      <span>{ingredient}</span>
                       <button
-                        onClick={() => handleCategoryChange(category)}
-                        className="text-blue-500 hover:text-blue-700"
+                        onClick={() => removeUserIngredient(ingredient)}
+                        className="text-green-500 hover:text-green-700"
                       >
                         ×
                       </button>
@@ -455,82 +560,112 @@ const RecipeFilterApp = () => {
             )}
 
             {/* Recipe Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredRecipes.map((recipe) => (
-                <div key={recipe.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                  <div className="p-6">
-                    <div className="text-4xl mb-4 text-center">{recipe.image}</div>
-                    <h3 className="font-bold text-lg text-gray-800 mb-2">{recipe.name}</h3>
-                    <p className="text-gray-600 text-sm mb-4">{recipe.description}</p>
-                    
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{recipe.cookTime}</span>
+            {filteredRecommendations.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredRecommendations.map((recipe, index) => (
+                  <div key={recipe.id || index} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
+                    <div className="p-6">
+                      <div className="text-4xl mb-4 text-center">
+                        {categories.find(cat => cat.name.toLowerCase() === recipe.category?.toLowerCase())?.icon || '🍽️'}
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Users className="w-4 h-4" />
-                        <span>{recipe.servings} porsi</span>
+                      
+                      <h3 className="font-bold text-lg text-gray-800 mb-2">{recipe.title}</h3>
+                      
+                      <div className="flex items-center justify-between mb-4">
+                        {/* Rating */}
+                        <div className="flex items-center space-x-1">
+                          {getRatingStars(recipe.rating)}
+                          <span className="text-sm text-gray-600 ml-1">({recipe.rating})</span>
+                        </div>
+                        
+                        {/* Similarity Score */}
+                        {recipe.similarity_score && (
+                          <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                            {Math.round(recipe.similarity_score * 100)}% match
+                          </span>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="mb-4">
-                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {recipe.category}
-                      </span>
-                    </div>
+                      <div className="flex items-center justify-between mb-4">
+                        {/* Category */}
+                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                          {recipe.category}
+                        </span>
+                        
+                        {/* Complexity */}
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getComplexityColor(recipe.complexity)}`}>
+                          {recipe.complexity}
+                        </span>
+                      </div>
 
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium text-gray-800 mb-2 text-sm">Bahan-bahan:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {recipe.ingredients.map((ingredient) => {
-                          const isUserIngredient = userIngredients.some(userIng => 
-                            ingredient.toLowerCase().includes(userIng.toLowerCase()) ||
-                            userIng.toLowerCase().includes(ingredient.toLowerCase())
-                          );
-                          const isSelectedIngredient = selectedIngredients.includes(ingredient);
-                          
-                          // Cari icon untuk ingredient
-                          const mainIngredient = mainIngredients.find(item => item.name === ingredient);
-                          const additionalIngredient = additionalIngredients.find(item => item.name === ingredient);
-                          const ingredientIcon = mainIngredient?.icon || additionalIngredient?.icon;
-                          
-                          return (
-                            <span
-                              key={ingredient}
-                              className={`px-2 py-1 rounded-full text-xs flex items-center space-x-1 ${
-                                isUserIngredient
-                                  ? 'bg-green-100 text-green-700 font-medium ring-2 ring-green-200'
-                                  : isSelectedIngredient
-                                  ? 'bg-orange-100 text-orange-700 font-medium'
-                                  : 'bg-gray-100 text-gray-600'
-                              }`}
-                            >
-                              {ingredientIcon && <span className="text-xs">{ingredientIcon}</span>}
-                              <span>{ingredient}</span>
-                              {isUserIngredient && <span className="text-green-600">✓</span>}
-                            </span>
-                          );
-                        })}
+                      {/* Ingredients */}
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium text-gray-800 mb-2 text-sm">Bahan-bahan:</h4>
+                        <div className="max-h-32 overflow-y-auto">
+                          <div className="flex flex-wrap gap-1">
+                            {parseIngredients(recipe.ingredients).slice(0, 8).map((ingredient, idx) => {
+                              const cleanIngredient = ingredient.trim();
+                              const isUserIngredient = userIngredients.some(userIng => 
+                                cleanIngredient.toLowerCase().includes(userIng.toLowerCase()) ||
+                                userIng.toLowerCase().includes(cleanIngredient.toLowerCase())
+                              );
+                              const isSelectedIngredient = selectedIngredients.some(selIng =>
+                                cleanIngredient.toLowerCase().includes(selIng.toLowerCase()) ||
+                                selIng.toLowerCase().includes(cleanIngredient.toLowerCase())
+                              );
+                              
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`px-2 py-1 rounded-full text-xs ${
+                                    isUserIngredient
+                                      ? 'bg-green-100 text-green-700 font-medium ring-1 ring-green-200'
+                                      : isSelectedIngredient
+                                      ? 'bg-orange-100 text-orange-700 font-medium'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                  title={cleanIngredient}
+                                >
+                                  {cleanIngredient.length > 15 ? cleanIngredient.substring(0, 15) + '...' : cleanIngredient}
+                                  {isUserIngredient && <span className="ml-1 text-green-600">✓</span>}
+                                </span>
+                              );
+                            })}
+                            {parseIngredients(recipe.ingredients).length > 8 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                                +{parseIngredients(recipe.ingredients).length - 8} lainnya
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* No Results */}
-            {filteredRecipes.length === 0 && (
+            {hasSearched && filteredRecommendations.length === 0 && !loading && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">😅</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Tidak ada resep yang ditemukan</h3>
-                <p className="text-gray-500 mb-4">Coba ubah filter atau kata kunci pencarian Anda</p>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Tidak ada rekomendasi yang ditemukan</h3>
+                <p className="text-gray-500 mb-4">Coba ubah bahan atau filter yang dipilih</p>
                 <button
                   onClick={clearAllFilters}
                   className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
                 >
                   Reset Semua Filter
                 </button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center py-12">
+                <Loader2 className="w-12 h-12 animate-spin mx-auto text-orange-500 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Mencari Rekomendasi Terbaik...</h3>
+                <p className="text-gray-500">Machine Learning sedang menganalisis bahan-bahan Anda</p>
               </div>
             )}
           </div>
