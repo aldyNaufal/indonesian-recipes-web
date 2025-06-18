@@ -1,17 +1,23 @@
 // api.js - FIXED VERSION
+// api.js - FIXED VERSION
 const getBaseUrl = () => {
-  // Untuk development
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:3000';
   }
-  
-  // Untuk production - gunakan relative URL agar mengikuti protocol yang sama
-  return '';  // Empty string akan membuat request relatif ke domain saat ini
+  return '';
 };
 
 const baseUrl = getBaseUrl();
 
-// Generic API function - FIXED
+// TAMBAHKAN EXPORT di sini
+export async function handleResponse(response) {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return await response.json();
+}
+
+// Kode yang Anda tunjukkan tetap sama, tidak perlu diubah
 export async function apiRequest(endpoint, options = {}) {
   try {
     let url;
@@ -20,7 +26,6 @@ export async function apiRequest(endpoint, options = {}) {
       url = endpoint;
     } else {
       const cleanEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-      // Jika baseUrl kosong (production), gunakan relative URL
       url = baseUrl ? `${baseUrl}${cleanEndpoint}` : cleanEndpoint;
     }
     
@@ -43,14 +48,13 @@ export async function apiRequest(endpoint, options = {}) {
     console.log('Options:', finalOptions);
     
     const response = await fetch(url, finalOptions);
-    return await handleResponse(response);
+    return await handleResponse(response); // <- Ini akan bekerja karena handleResponse sudah di-export
   } catch (error) {
     console.error('API Request Error:', error);
     throw error;
   }
 }
 
-// Sisa fungsi tetap sama...
 
 // GET request
 export async function apiGet(endpoint, token = null) {
