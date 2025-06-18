@@ -1,35 +1,15 @@
-// api.js - Fixed version untuk production dengan domain
-// Konfigurasi base URL - FIXED VERSION
+// api.js - FIXED VERSION
 const getBaseUrl = () => {
   // Untuk development
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:3000'; // URL lengkap backend development
+    return 'http://localhost:3000';
   }
   
-  // Untuk production - menggunakan domain yang sama
-  return `${window.location.protocol}//${window.location.host}`;
+  // Untuk production - gunakan relative URL agar mengikuti protocol yang sama
+  return '';  // Empty string akan membuat request relatif ke domain saat ini
 };
 
 const baseUrl = getBaseUrl();
-
-// Helper function untuk handle response
-const handleResponse = async (response) => {
-  if (!response.ok) {
-    try {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    } catch (parseError) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-  }
-  
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return await response.json();
-  }
-  
-  return await response.text();
-};
 
 // Generic API function - FIXED
 export async function apiRequest(endpoint, options = {}) {
@@ -37,12 +17,11 @@ export async function apiRequest(endpoint, options = {}) {
     let url;
     
     if (endpoint.startsWith('http')) {
-      // URL absolut
       url = endpoint;
     } else {
-      // Pastikan endpoint dimulai dengan /api
       const cleanEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-      url = `${baseUrl}${cleanEndpoint}`;
+      // Jika baseUrl kosong (production), gunakan relative URL
+      url = baseUrl ? `${baseUrl}${cleanEndpoint}` : cleanEndpoint;
     }
     
     const defaultOptions = {
@@ -61,8 +40,7 @@ export async function apiRequest(endpoint, options = {}) {
     };
     
     console.log('Making API request to:', url);
-    console.log('Environment:', window.location.hostname);
-    console.log('Base URL:', baseUrl);
+    console.log('Options:', finalOptions);
     
     const response = await fetch(url, finalOptions);
     return await handleResponse(response);
@@ -71,6 +49,8 @@ export async function apiRequest(endpoint, options = {}) {
     throw error;
   }
 }
+
+// Sisa fungsi tetap sama...
 
 // GET request
 export async function apiGet(endpoint, token = null) {
