@@ -11,8 +11,8 @@ services:
       - MONGO_URI=mongodb://mongo:ylhJLGusxxhZcKarniyDYZyWwtFmxbxF@crossover.proxy.rlwy.net:50144
       - JWT_SECRET=5799f39d3045afe7aacdeac7e65888e53e1efb824b9c46a6c306dd5b71a89a488ada8049ec4c4736cb064877ea345c4c0b0449adad92e28124739351db7c2799
       - ML_API_BASE_URL=https://brohuy-recipes-recommendation-models.hf.space/
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"  # Expose ke host untuk nginx system
     networks:
       - app-network
     healthcheck:
@@ -25,8 +25,8 @@ services:
     build: ./frontend
     container_name: frontend
     restart: unless-stopped
-    expose:
-      - "80"
+    ports:
+      - "8080:80"  # Expose ke host untuk nginx system
     depends_on:
       - backend
     networks:
@@ -37,37 +37,7 @@ services:
       timeout: 10s
       retries: 3
 
-  nginx-proxy:
-    image: nginx:alpine
-    container_name: nginx-proxy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      # Uncomment untuk SSL dengan Let's Encrypt
-      # - ./ssl:/etc/nginx/ssl:ro
-      # - /etc/letsencrypt:/etc/letsencrypt:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Optional: Certbot untuk SSL otomatis
-  # certbot:
-  #   image: certbot/certbot
-  #   container_name: certbot
-  #   volumes:
-  #     - /etc/letsencrypt:/etc/letsencrypt
-  #     - /var/www/certbot:/var/www/certbot
-  #   command: certonly --webroot -w /var/www/certbot --force-renewal --email your-email@example.com -d werecooked.my.id --agree-tos
+  # Hapus nginx-proxy container karena menggunakan system nginx
 
 networks:
   app-network:
