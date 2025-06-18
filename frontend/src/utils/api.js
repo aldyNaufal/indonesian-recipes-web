@@ -1,4 +1,4 @@
-// api.js - Fixed version dengan konsistensi backend
+// api.js - Fixed version untuk production dengan domain
 // Konfigurasi base URL - FIXED VERSION
 const getBaseUrl = () => {
   // Untuk development
@@ -6,8 +6,8 @@ const getBaseUrl = () => {
     return 'http://localhost:3000'; // URL lengkap backend development
   }
   
-  // Untuk production - asumsi backend dan frontend sama-sama di server yang sama
-  return ''; // Empty string, karena endpoint sudah lengkap dengan /api
+  // Untuk production - menggunakan domain yang sama
+  return `${window.location.protocol}//${window.location.host}`;
 };
 
 const baseUrl = getBaseUrl();
@@ -34,9 +34,10 @@ const handleResponse = async (response) => {
 // Generic API function - FIXED
 export async function apiRequest(endpoint, options = {}) {
   try {
-    // PERBAIKAN: Hindari duplikasi /api
     let url;
+    
     if (endpoint.startsWith('http')) {
+      // URL absolut
       url = endpoint;
     } else {
       // Pastikan endpoint dimulai dengan /api
@@ -49,7 +50,7 @@ export async function apiRequest(endpoint, options = {}) {
         'Content-Type': 'application/json',
       },
     };
-
+    
     const finalOptions = {
       ...defaultOptions,
       ...options,
@@ -58,9 +59,10 @@ export async function apiRequest(endpoint, options = {}) {
         ...options.headers,
       },
     };
-
+    
     console.log('Making API request to:', url);
-    console.log('Options:', finalOptions);
+    console.log('Environment:', window.location.hostname);
+    console.log('Base URL:', baseUrl);
     
     const response = await fetch(url, finalOptions);
     return await handleResponse(response);
@@ -136,7 +138,6 @@ export const publicApiGet = async (endpoint) => {
 export const publicApiPost = async (endpoint, data) => {
   return apiPost(endpoint, data, null);
 };
-
 // =================================================================
 // RECIPE API SERVICE - FIXED untuk konsistensi dengan backend
 // =================================================================

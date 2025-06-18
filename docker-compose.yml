@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -8,17 +7,16 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - CORS_ORIGIN=*
+      - CORS_ORIGIN=https://werecooked.my.id,http://werecooked.my.id
       - MONGO_URI=mongodb://mongo:ylhJLGusxxhZcKarniyDYZyWwtFmxbxF@crossover.proxy.rlwy.net:50144
       - JWT_SECRET=5799f39d3045afe7aacdeac7e65888e53e1efb824b9c46a6c306dd5b71a89a488ada8049ec4c4736cb064877ea345c4c0b0449adad92e28124739351db7c2799
-      - ML_API_BASE_URL= https://brohuy-recipes-recommendation-models.hf.space/
+      - ML_API_BASE_URL=https://brohuy-recipes-recommendation-models.hf.space/
     expose:
       - "3000"
-    # Remove volumes in production for better security
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,7 +32,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -44,19 +42,32 @@ services:
     container_name: nginx-proxy
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # Uncomment untuk SSL dengan Let's Encrypt
+      # - ./ssl:/etc/nginx/ssl:ro
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - frontend
       - backend
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Optional: Certbot untuk SSL otomatis
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: certbot
+  #   volumes:
+  #     - /etc/letsencrypt:/etc/letsencrypt
+  #     - /var/www/certbot:/var/www/certbot
+  #   command: certonly --webroot -w /var/www/certbot --force-renewal --email your-email@example.com -d werecooked.my.id --agree-tos
 
 networks:
   app-network:
