@@ -14,7 +14,7 @@ import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
 import EditProfilePage from "./pages/EditProfile";
 import PreferencesPage from "./pages/PreferencesPage";
-import Layout from "./components/Layout";
+import Layout from "./components/common/Layout";
 import "./index.css";
 
 // Komponen untuk menangani scroll behavior

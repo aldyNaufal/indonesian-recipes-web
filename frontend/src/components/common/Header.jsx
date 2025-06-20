@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Bookmark, LogOut } from 'lucide-react';
-import logo from "../assets/Group59.svg"
+import logo from "../../assets/Group59.svg"
 
 function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Simulasi status login

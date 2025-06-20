@@ -1,4 +1,4 @@
-import footer from "../assets/footer.png"
+import footer from "../../assets/footer.png"
 
 export default function Footer() {
   return (
