@@ -1,16 +1,23 @@
-// src/components/Detail.jsx atau Detail.jsx
+// src/components/Detail.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { loadRecipeDetail } from '../../utils/recipeService'; // Pastikan path benar
+import { loadRecipeDetail } from '../../utils/recipeService';
 import RecipeImage from '../../components/recipe/RecipeImage';
+import { useAuth } from '../../context/AuthContext'; // Sesuaikan dengan path AuthContext Anda
 
 const Detail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated, token } = useAuth(); // Menggunakan custom hook useAuth
+  
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageError, setImageError] = useState(false);
+  
+  // State untuk bookmark
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   useEffect(() => {
     const fetchRecipe = async () => {
@@ -19,13 +26,15 @@ const Detail = () => {
         setError(null);
         console.log('Fetching recipe with ID:', id);
         
-        // Debug: Cek apakah loadRecipeDetail function tersedia
-        console.log('loadRecipeDetail function:', loadRecipeDetail);
-        
         const recipeData = await loadRecipeDetail(id);
         console.log('Recipe loaded:', recipeData);
         
         setRecipe(recipeData);
+        
+        // Cek apakah recipe sudah dibookmark jika user login
+        if (isAuthenticated && token) {
+          await checkBookmarkStatus(id);
+        }
       } catch (err) {
         console.error('Error loading recipe:', err);
         setError(err.message || 'Gagal memuat detail resep');
@@ -40,7 +49,108 @@ const Detail = () => {
       setError('Recipe ID not provided');
       setLoading(false);
     }
-  }, [id]);
+      }, [id, isAuthenticated, token]);
+
+  // Fungsi untuk cek status bookmark
+  const checkBookmarkStatus = async (recipeId) => {
+    try {
+      if (!token) return;
+
+      const response = await fetch('/api/bookmarks', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const bookmarked = data.data.some(bookmark => bookmark.recipeId === recipeId);
+        setIsBookmarked(bookmarked);
+      }
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+    }
+  };
+
+  // Fungsi untuk toggle bookmark
+  const toggleBookmark = async () => {
+    if (!isAuthenticated || !token) {
+      // Redirect ke login jika belum login
+      navigate('/login', { 
+        state: { from: `/recipe/${id}`, message: 'Silakan login untuk menambah bookmark' }
+      });
+      return;
+    }
+
+    if (!recipe) return;
+
+    setBookmarkLoading(true);
+    try {
+      if (isBookmarked) {
+        // Hapus bookmark
+        const response = await fetch(`/api/bookmarks/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          setIsBookmarked(false);
+          showNotification('Bookmark dihapus', 'success');
+        } else {
+          const errorData = await response.json();
+          showNotification(errorData.message || 'Gagal menghapus bookmark', 'error');
+        }
+      } else {
+        // Tambah bookmark
+        const bookmarkData = {
+          recipeId: id,
+          title: recipe['Title Cleaned'],
+          image: recipe['Image URL']
+        };
+
+        const response = await fetch('/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bookmarkData)
+        });
+
+        if (response.ok) {
+          setIsBookmarked(true);
+          showNotification('Bookmark berhasil ditambahkan', 'success');
+        } else {
+          const errorData = await response.json();
+          showNotification(errorData.message || 'Gagal menambahkan bookmark', 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Error updating bookmark:', error);
+      showNotification('Terjadi kesalahan', 'error');
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
+
+  // Fungsi untuk menampilkan notifikasi (implementasi sederhana)
+  const showNotification = (message, type) => {
+    // Anda bisa menggunakan library seperti react-toast atau implementasi custom
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium transition-all duration-300 ${
+      type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  };
 
   const getRating = (recipe) => {
     const rating = recipe?.total_rating || recipe?.rating || recipe?.Rating;
@@ -64,7 +174,6 @@ const Detail = () => {
   };
 
   const parseAndCleanSteps = (stepsData) => {
-    // Parse dari database
     let steps = [];
     if (typeof stepsData === 'string') {
       try {
@@ -77,7 +186,6 @@ const Detail = () => {
       steps = stepsData;
     }
     
-    // Hapus prefix "step n"
     return steps.map(step => step.replace(/^step\s+\d+\s*/i, ''));
   };
 
@@ -85,11 +193,28 @@ const Detail = () => {
     if (!ingredientsString) return [];
     
     return ingredientsString
-      .split(',')                    // Pisah berdasarkan koma
-      .map(ingredient => ingredient.trim())  // Hilangkan spasi di awal/akhir
-      .filter(ingredient => ingredient.length > 0);  // Hilangkan string kosong
+      .split(',')
+      .map(ingredient => ingredient.trim())
+      .filter(ingredient => ingredient.length > 0);
   };
 
+  function toTitleCase(str) {
+    if (!str) return 'Judul tidak tersedia';
+    
+    const smallWords = ['dan', 'atau', 'di', 'ke', 'dari', 'untuk', 'dengan', 'pada', 'dalam', 'yang', 'adalah', 'akan', 'telah', 'sudah', 'masih', 'juga', 'hanya', 'tidak', 'bukan', 'agar', 'supaya', 'bila', 'jika', 'kalau', 'karena', 'sebab', 'oleh', 'tentang', 'antara', 'hingga', 'sampai', 'serta', 'bahwa', 'seperti', 'bagaikan', 'ibarat'];
+    
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word, index) => {
+        if (index === 0 || !smallWords.includes(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      })
+      .join(' ');
+  }
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -140,88 +265,179 @@ const Detail = () => {
   const optimizedImageUrl = getOptimizedImageUrl(recipe['Image URL']);
   const steps = parseAndCleanSteps(recipe['Steps Cleaned']);
   const ingredients = recipe['Ingredients Cleaned'] || [];
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header dengan tombol kembali */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Kembali
-          </button>
-        </div>
-      </div>
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Title Section */}
+          {/* Header Section with Back Button */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 text-center">
-              {recipe['Title Cleaned'] || 'Judul tidak tersedia'}
-            </h1>
+            <div className="flex items-center justify-between mb-6">
+              {/* Back Button */}
+              <button
+                onClick={() => window.history.back()}
+                className="group flex items-center bg-white hover:bg-gray-50 text-gray-700 hover:text-red-600 px-4 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200"
+              >
+                <svg 
+                  className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="font-medium">Kembali</span>
+              </button>
+
+              {/* Page Actions */}
+              <div className="flex items-center space-x-3">
+
+                {/* Bookmark Button */}
+                <button
+                  onClick={toggleBookmark}
+                  disabled={bookmarkLoading}
+                  className={`group p-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border ${
+                    isBookmarked 
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200' 
+                      : 'bg-white text-gray-700 hover:bg-red-50 hover:text-red-600 border-gray-200'
+                  } ${bookmarkLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={isBookmarked ? 'Hapus dari bookmark' : 'Tambah ke bookmark'}
+                >
+                  {bookmarkLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-current border-t-transparent"></div>
+                  ) : (
+                    <svg 
+                      className={`w-5 h-5 transform group-hover:scale-110 transition-transform duration-300 ${
+                        isBookmarked ? 'animate-pulse' : ''
+                      }`} 
+                      fill={isBookmarked ? 'currentColor' : 'none'} 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Title Section */}
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4 leading-tight">
+                {toTitleCase(recipe['Title Cleaned']) || 'Judul tidak tersedia'}
+              </h1>
+              {/* Rating Section - Moved to Header */}
+              <div className="flex items-center justify-center mb-2">
+                <div className="flex items-center bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-full shadow-lg">
+                  <span className="text-2xl mr-2">⭐</span>
+                  <span className="text-xl font-bold">
+                    {getRating(recipe)}
+                  </span>
+                  <span className="ml-1 opacity-90">/5</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Main Content Layout */}
           <div className="grid lg:grid-cols-2 gap-8">
-            {/* Left Column - Image and Rating */}
+            {/* Left Column - Image */}
             <div className="space-y-6">
               {/* Image Section */}
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300">
                 {optimizedImageUrl && !imageError ? (
                   <div className="aspect-[4/3] bg-gray-200 overflow-hidden">
                     <RecipeImage
                       src={optimizedImageUrl}
                       alt={recipe['Title Cleaned']}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                       onError={() => setImageError(true)}
                       fallbackSrc={recipe['Image URL']}
                     />
                   </div>
                 ) : (
-                  <div className="aspect-[4/3] bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                  <div className="aspect-[4/3] bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400 flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-6xl mb-2">🍽️</div>
-                      <div className="text-gray-600">No Image Available</div>
+                      <div className="text-6xl mb-2 animate-bounce">🍽️</div>
+                      <div className="text-gray-600 font-medium">No Image Available</div>
                     </div>
                   </div>
                 )}
-                
-                {/* Rating Section */}
-                <div className="p-6">
-                  <div className="flex items-center justify-center">
-                    <div className="flex items-center bg-yellow-50 px-4 py-2 rounded-full">
-                      <span className="text-yellow-500 text-2xl mr-2">⭐</span>
-                      <span className="text-2xl font-bold text-gray-800">
-                        {getRating(recipe)}
-                      </span>
-                      <span className="text-gray-600 ml-1">/5</span>
-                    </div>
-                  </div>
+              </div>
+
+              {/* Quick Actions Card */}
+              <div className="bg-white rounded-3xl shadow-xl p-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                  <span className="mr-2">🚀</span>
+                  Aksi Cepat
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Recipe Link Button */}
+                  {recipe.URL && (
+                    <a 
+                      href={recipe.URL} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-between shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-3 text-xl">🔗</span>
+                        <div>
+                          <div className="font-semibold">Resep Lengkap</div>
+                          <div className="text-sm opacity-90">Lihat detail di sumber</div>
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  )}
+                  
+                  {/* YouTube Video Button */}
+                  {recipe?.['Title Cleaned'] && (
+                    <a 
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`cara membuat ${recipe['Title Cleaned']}`)}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-between shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-3 text-xl">📺</span>
+                        <div>
+                          <div className="font-semibold">Video Tutorial</div>
+                          <div className="text-sm opacity-90">Cari di YouTube</div>
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Steps and Content */}
+            {/* Right Column - Recipe Details */}
             <div className="space-y-6">
               {/* Steps Section */}
               {steps.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h2 className="text-2xl font-bold mb-4 text-gray-800 flex items-center">
-                    <span className="mr-2">📝</span>
+                <div className="bg-white rounded-3xl shadow-xl p-6 hover:shadow-2xl transition-shadow duration-300">
+                  <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                    <span className="mr-3 text-2xl">📝</span>
                     Langkah-langkah Pembuatan
                   </h2>
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {steps.map((step, index) => (
-                      <div key={index} className="flex items-start">
-                        <span className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold mr-4 mt-0.5 flex-shrink-0">
+                      <div key={index} className="flex items-start group hover:bg-gray-50 p-3 rounded-xl transition-colors duration-200">
+                        <span className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold mr-4 mt-0.5 flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-200">
                           {index + 1}
                         </span>
-                        <p className="text-gray-700 leading-relaxed">{step}</p>
+                        <p className="text-gray-700 leading-relaxed flex-1">{step}</p>
                       </div>
                     ))}
                   </div>
@@ -230,16 +446,16 @@ const Detail = () => {
 
               {/* Bahan-bahan Section */}
               {ingredients.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h2 className="text-2xl font-bold mb-4 text-gray-800 flex items-center">
-                    <span className="mr-2">🥘</span>
+                <div className="bg-white rounded-3xl shadow-xl p-6 hover:shadow-2xl transition-shadow duration-300">
+                  <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                    <span className="mr-3 text-2xl">🥘</span>
                     Bahan-bahan
                   </h2>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {parseIngredients(ingredients).map((ingredient, index) => (
                       <span
                         key={index}
-                        className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium border border-blue-200"
+                        className="bg-gradient-to-r from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 text-blue-800 px-4 py-2 rounded-full text-sm font-medium border border-blue-300 transition-all duration-200 hover:scale-105 cursor-default shadow-sm"
                       >
                         {ingredient}
                       </span>
@@ -249,17 +465,20 @@ const Detail = () => {
               )}
 
               {/* Additional Information */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800 flex items-center">
-                  <span className="mr-2">ℹ️</span>
+              <div className="bg-white rounded-3xl shadow-xl p-6 hover:shadow-2xl transition-shadow duration-300">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                  <span className="mr-3 text-2xl">ℹ️</span>
                   Informasi Tambahan
                 </h2>
                 <div className="space-y-4">
                   {/* Category */}
                   {recipe.Category && (
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">Kategori:</span>
-                      <span className="bg-red-100 text-red-600 text-sm font-medium px-3 py-1 rounded-full">
+                    <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                      <span className="text-gray-700 font-semibold flex items-center">
+                        <span className="mr-2">🏷️</span>
+                        Kategori:
+                      </span>
+                      <span className="bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-md">
                         {recipe.Category}
                       </span>
                     </div>
@@ -267,9 +486,12 @@ const Detail = () => {
                   
                   {/* Total Steps */}
                   {recipe['Total Steps'] && (
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">Total Langkah:</span>
-                      <span className="bg-blue-100 text-blue-600 text-sm font-medium px-3 py-1 rounded-full">
+                    <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                      <span className="text-gray-700 font-semibold flex items-center">
+                        <span className="mr-2">📊</span>
+                        Total Langkah:
+                      </span>
+                      <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-md">
                         {recipe['Total Steps']} langkah
                       </span>
                     </div>
@@ -277,26 +499,14 @@ const Detail = () => {
                   
                   {/* Total Ingredients */}
                   {recipe['Total Ingredients'] && (
-                    <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">Total Bahan:</span>
-                      <span className="bg-green-100 text-green-600 text-sm font-medium px-3 py-1 rounded-full">
+                    <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                      <span className="text-gray-700 font-semibold flex items-center">
+                        <span className="mr-2">🛒</span>
+                        Total Bahan:
+                      </span>
+                      <span className="bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-md">
                         {recipe['Total Ingredients']} bahan
                       </span>
-                    </div>
-                  )}
-                  
-                  {/* Full Recipe Link */}
-                  {recipe.URL && (
-                    <div className="pt-4">
-                      <a 
-                        href={recipe.URL} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center font-medium"
-                      >
-                        <span className="mr-2">🔗</span>
-                        Lihat Resep Lengkap
-                      </a>
                     </div>
                   )}
                 </div>

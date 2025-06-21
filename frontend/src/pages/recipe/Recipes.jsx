@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Clock, Users, Loader2, Star, ChefHat, RefreshCw } from 'lucide-react';
 import { publicApiGet } from '../../utils/httpClient';
+import { useNavigate } from 'react-router-dom';
+
 
 
 const Recipe = () => {
@@ -12,14 +14,15 @@ const Recipe = () => {
   const [ingredientInput, setIngredientInput] = useState('');
   const [complexityFilter, setComplexityFilter] = useState('');
   const [minRating, setMinRating] = useState('');
-  const [topN, setTopN] = useState(10);
+  const [topN, setTopN] = useState(6);
   const [recommendations, setRecommendations] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
-  const [apiMessage, setApiMessage] = useState('');
+  const [apiMessage, setApiMessage] = useState('')
+  const navigate = useNavigate();
   const [afterFilters, setAfterFilters] = useState(0);
 
   // API Configuration
@@ -60,7 +63,7 @@ const Recipe = () => {
       setLoadingCategories(true);
       
       // Using the API helper instead of direct fetch
-      const response = await publicApiGet('/categories');
+      const response = await publicApiGet('api/categories');
       
       // Debug: Log the response to see the actual structure
       console.log('Categories API response:', response);
@@ -256,6 +259,25 @@ const Recipe = () => {
         return 'bg-gray-100 text-gray-700';
     }
   };
+
+  function toTitleCase(str) {
+    if (!str) return 'Judul tidak tersedia';
+    
+    // Daftar kata yang biasanya tidak dikapitalisasi (kecuali di awal kalimat)
+    const smallWords = ['dan', 'atau', 'di', 'ke', 'dari', 'untuk', 'dengan', 'pada', 'dalam', 'yang', 'adalah', 'akan', 'telah', 'sudah', 'masih', 'juga', 'hanya', 'tidak', 'bukan', 'agar', 'supaya', 'bila', 'jika', 'kalau', 'karena', 'sebab', 'oleh', 'tentang', 'antara', 'hingga', 'sampai', 'serta', 'bahwa', 'seperti', 'bagaikan', 'ibarat'];
+    
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word, index) => {
+        // Kapitalisasi huruf pertama atau jika bukan kata kecil
+        if (index === 0 || !smallWords.includes(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      })
+      .join(' ');
+  }
 
   // Get rating stars
   const getRatingStars = (rating) => {
@@ -586,89 +608,102 @@ const Recipe = () => {
             {/* Recipe Grid */}
             {filteredRecommendations.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredRecommendations.map((recipe, index) => (
-                  <div key={recipe.id || index} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
-                    <div className="p-6">
-                      <div className="text-4xl mb-4 text-center">
-                        {categories.find(cat => cat.name.toLowerCase() === recipe.category?.toLowerCase())?.icon || '🍽️'}
-                      </div>
-                      
-                      <h3 className="font-bold text-lg text-gray-800 mb-2">{recipe.title}</h3>
-                      
-                      <div className="flex items-center justify-between mb-4">
-                        {/* Rating */}
-                        <div className="flex items-center space-x-1">
-                          {getRatingStars(recipe.rating)}
-                          <span className="text-sm text-gray-600 ml-1">({recipe.rating})</span>
+                {filteredRecommendations.map((recipe, index) => {
+                  // Function untuk handle click pada setiap recipe card
+                  const handleRecipeClick = () => {
+                    const recipeId = recipe.item_id || recipe.id || recipe._id;
+                    if (recipeId) {
+                      navigate(`/resep/${recipeId}`);
+                    } else {
+                      console.error('Recipe ID not found:', recipe);
+                    }
+                  };
+
+                  return (
+                    <div 
+                      key={recipe.id || index} 
+                      className="bg-white rounded-xl shadow-sm hover:shadow-md overflow-hidden border border-gray-100 cursor-pointer transform hover:scale-105 transition-all duration-200"
+                      onClick={handleRecipeClick}
+                    >
+                      <div className="p-6">
+                        <div className="text-4xl mb-4 text-center">
+                          {categories.find(cat => cat.name.toLowerCase() === recipe.category?.toLowerCase())?.icon || '🍽️'}
                         </div>
                         
-                        {/* Similarity Score */}
-                        {recipe.similarity_score && (
-                          <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                            {Math.round(recipe.similarity_score * 100)}% match
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between mb-4">
-                        {/* Category */}
-                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                          {recipe.category}
-                        </span>
+                        <h3 className="font-bold text-lg text-gray-800 mb-2">{toTitleCase(recipe.title)}</h3>
                         
-                        {/* Complexity */}
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getComplexityColor(recipe.complexity)}`}>
-                          {recipe.complexity}
-                        </span>
-                      </div>
-
-                      {/* Ingredients */}
-                      <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-800 mb-2 text-sm">Bahan-bahan:</h4>
-                        <div className="max-h-32 overflow-y-auto">
-                          <div className="flex flex-wrap gap-1">
-                            {parseIngredients(recipe.ingredients).slice(0, 8).map((ingredient, idx) => {
-                              const cleanIngredient = ingredient.trim();
-                              const isUserIngredient = userIngredients.some(userIng => 
-                                cleanIngredient.toLowerCase().includes(userIng.toLowerCase()) ||
-                                userIng.toLowerCase().includes(cleanIngredient.toLowerCase())
-                              );
-                              const isSelectedIngredient = selectedIngredients.some(selIng =>
-                                cleanIngredient.toLowerCase().includes(selIng.toLowerCase()) ||
-                                selIng.toLowerCase().includes(cleanIngredient.toLowerCase())
-                              );
-                              
-                              return (
-                                <span
-                                  key={idx}
-                                  className={`px-2 py-1 rounded-full text-xs ${
-                                    isUserIngredient
-                                      ? 'bg-green-100 text-green-700 font-medium ring-1 ring-green-200'
-                                      : isSelectedIngredient
-                                      ? 'bg-orange-100 text-orange-700 font-medium'
-                                      : 'bg-gray-100 text-gray-600'
-                                  }`}
-                                  title={cleanIngredient}
-                                >
-                                  {cleanIngredient.length > 15 ? cleanIngredient.substring(0, 15) + '...' : cleanIngredient}
-                                  {isUserIngredient && <span className="ml-1 text-green-600">✓</span>}
+                        <div className="flex items-center justify-between mb-4">
+                          {/* Rating */}
+                          <div className="flex items-center space-x-1">
+                            {getRatingStars(recipe.rating)}
+                            <span className="text-sm text-gray-600 ml-1">({recipe.rating})</span>
+                          </div>
+                          
+                          {/* Similarity Score */}
+                          {recipe.similarity_score && (
+                            <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                              {Math.round(recipe.similarity_score * 100)}% match
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                          {/* Category */}
+                          <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            {recipe.category}
+                          </span>
+                          
+                          {/* Complexity */}
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getComplexityColor(recipe.complexity)}`}>
+                            {recipe.complexity}
+                          </span>
+                        </div>
+                        {/* Ingredients */}
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium text-gray-800 mb-2 text-sm">Bahan-bahan:</h4>
+                          <div className="max-h-32 overflow-y-auto">
+                            <div className="flex flex-wrap gap-1">
+                              {parseIngredients(recipe.ingredients).slice(0, 8).map((ingredient, idx) => {
+                                const cleanIngredient = ingredient.trim();
+                                const isUserIngredient = userIngredients.some(userIng => 
+                                  cleanIngredient.toLowerCase().includes(userIng.toLowerCase()) ||
+                                  userIng.toLowerCase().includes(cleanIngredient.toLowerCase())
+                                );
+                                const isSelectedIngredient = selectedIngredients.some(selIng =>
+                                  cleanIngredient.toLowerCase().includes(selIng.toLowerCase()) ||
+                                  selIng.toLowerCase().includes(cleanIngredient.toLowerCase())
+                                );
+                                
+                                return (
+                                  <span
+                                    key={idx}
+                                    className={`px-2 py-1 rounded-full text-xs ${
+                                      isUserIngredient
+                                        ? 'bg-green-100 text-green-700 font-medium ring-1 ring-green-200'
+                                        : isSelectedIngredient
+                                        ? 'bg-orange-100 text-orange-700 font-medium'
+                                        : 'bg-gray-100 text-gray-600'
+                                    }`}
+                                    title={cleanIngredient}
+                                  >
+                                    {cleanIngredient.length > 15 ? cleanIngredient.substring(0, 15) + '...' : cleanIngredient}
+                                    {isUserIngredient && <span className="ml-1 text-green-600">✓</span>}
+                                  </span>
+                                );
+                              })}
+                              {parseIngredients(recipe.ingredients).length > 8 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                                  +{parseIngredients(recipe.ingredients).length - 8} lainnya
                                 </span>
-                              );
-                            })}
-                            {parseIngredients(recipe.ingredients).length > 8 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
-                                +{parseIngredients(recipe.ingredients).length - 8} lainnya
-                              </span>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
-
             {/* No Results */}
             {hasSearched && filteredRecommendations.length === 0 && !loading && (
               <div className="text-center py-12">

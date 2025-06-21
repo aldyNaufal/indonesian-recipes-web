@@ -13,9 +13,12 @@ export async function apiRequest(endpoint, options = {}) {
     let url;
     
     if (endpoint.startsWith('http')) {
+      // Full URL provided
       url = endpoint;
     } else {
-      const cleanEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+      // Relative endpoint - since all backend routes now have /api/ prefix,
+      // we don't need to add it automatically
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
       url = baseUrl ? `${baseUrl}${cleanEndpoint}` : cleanEndpoint;
     }
     

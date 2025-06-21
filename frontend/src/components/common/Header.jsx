@@ -51,7 +51,7 @@ function Header() {
                     <LogIn className="w-4 h-4 mr-2" /> Login
                   </a>
 
-                  <a href="/signup" className="flex items-center px-4 py-2 hover:bg-gray-100 justify-between">
+                  <a href="/register" className="flex items-center px-4 py-2 hover:bg-gray-100 justify-between">
                     <div className="flex items-center">
                       <UserPlus className="w-4 h-4 mr-2" /> Sign Up
                     </div>

@@ -4,7 +4,7 @@ const { authMiddleware } = require('../middlewares/authMiddleware');
 const userRoutes = [
   {
     method: 'GET',
-    path: '/profile',
+    path: '/api/profile',
     handler: userHandler.getProfile,
     options: {
       pre: [{ method: authMiddleware }],
@@ -12,13 +12,13 @@ const userRoutes = [
   },
   {
     method: 'PUT',
-    path: '/profile',
+    path: '/api/profile',
     options: { pre: [authMiddleware] },
     handler: userHandler.updateProfile,
   },
   {
     method: 'PUT',
-    path: '/profile/password',
+    path: '/api/profile/password',
     options: { pre: [authMiddleware] },
     handler: userHandler.updatePassword,
   },

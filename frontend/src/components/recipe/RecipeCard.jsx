@@ -26,6 +26,26 @@ const RecipeCard = ({
       console.error('Recipe ID not found:', recipe);
     }
   };
+
+  // Fungsi untuk mengubah teks menjadi Title Case
+  function toTitleCase(str) {
+    if (!str) return 'Judul tidak tersedia';
+    
+    // Daftar kata yang biasanya tidak dikapitalisasi (kecuali di awal kalimat)
+    const smallWords = ['dan', 'atau', 'di', 'ke', 'dari', 'untuk', 'dengan', 'pada', 'dalam', 'yang', 'adalah', 'akan', 'telah', 'sudah', 'masih', 'juga', 'hanya', 'tidak', 'bukan', 'agar', 'supaya', 'bila', 'jika', 'kalau', 'karena', 'sebab', 'oleh', 'tentang', 'antara', 'hingga', 'sampai', 'serta', 'bahwa', 'seperti', 'bagaikan', 'ibarat'];
+    
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map((word, index) => {
+        // Kapitalisasi huruf pertama atau jika bukan kata kecil
+        if (index === 0 || !smallWords.includes(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        }
+        return word;
+      })
+      .join(' ');
+  }
   
   const getRating = (recipe) => {
     const rating = recipe.total_rating || recipe.rating || recipe.Rating;
@@ -108,7 +128,7 @@ const RecipeCard = ({
         {/* Content Section */}
         <div className="p-6">
           <h3 className="font-bold text-xl mb-4 line-clamp-2 text-gray-800">
-            {recipe['Title Cleaned'] || recipe.Title || 'Judul tidak tersedia'}
+            {toTitleCase(recipe['Title Cleaned'] || recipe.Title || 'Judul tidak tersedia')}
           </h3>
           
           <div className="mb-3">

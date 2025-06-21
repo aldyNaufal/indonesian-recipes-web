@@ -8,7 +8,7 @@ const {
 const bookmarkRoutes = [
   {
     method: 'GET',
-    path: '/bookmark',
+    path: '/api/bookmark',
     handler: getBookmarks,
     options: {
       pre: [{ method: authMiddleware }],
@@ -16,7 +16,7 @@ const bookmarkRoutes = [
   },
   {
     method: 'POST',
-    path: '/bookmark',
+    path: '/api/bookmark',
     handler: addBookmark,
     options: {
       pre: [{ method: authMiddleware }],
@@ -24,7 +24,7 @@ const bookmarkRoutes = [
   },
   {
     method: 'DELETE',
-    path: '/bookmark/{id}',
+    path: '/api/bookmark/{id}',
     handler: deleteBookmark,
     options: {
       pre: [{ method: authMiddleware }],

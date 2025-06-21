@@ -22,7 +22,7 @@ export default function Register() {
     showLoadingAlert("Memproses pendaftaran...");
     
     try {
-      const res = await apiPost("/register", { name, email, password });
+      const res = await apiPost("api/register", { name, email, password });
   
       if (res.error) {
         showErrorAlert(res.message || "Gagal daftar");
