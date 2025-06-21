@@ -3,17 +3,18 @@ import { Routes, Route, useLocation} from "react-router-dom";
 import { useEffect } from "react";
 import { SearchProvider } from "./context/SearchContext";
 import { AuthProvider } from "./context/AuthContext"; // Import AuthProvider
-import HomePage from "./views/HomeView";
-import RecipePage from "./views/RecipesView";
-import DetailPage from "./pages/Detail";
+import HomePage from "./pages/home/Home";
+import RecipePage from "./pages/recipe/Recipes";
+import DetailPage from "./pages/recipe/Detail";
 import NotFound from "./pages/NotFound";
-import AboutPage from "./pages/About";
-import BookmarkPage from "./pages/Bookmark";
-import ProfilePage from "./pages/Profile";
-import LoginPage from "./pages/Login";
-import RegisterPage from "./pages/Register";
-import EditProfilePage from "./pages/EditProfile";
-import PreferencesPage from "./pages/PreferencesPage";
+import AboutPage from "./pages/about/About";
+import BookmarkPage from "./pages/bookmark/Bookmark";
+import ProfilePage from "./pages/profile/Profile";
+import LoginPage from "./pages/authentication/Login";
+import RegisterPage from "./pages/authentication/Register";
+import EditProfilePage from "./pages/profile/EditProfile";
+import PreferencesPage from "./pages/question/PreferencesPage";
+import CategoryPage from './pages/recipe/Category';
 import Layout from "./components/common/Layout";
 import "./index.css";
 
@@ -51,6 +52,7 @@ export default function App() {
             <Route index element={<HomePage />} />
             <Route path="resep" element={<RecipePage />} />
             <Route path="resep/:id" element={<DetailPage />} />
+            <Route path="/category/:category" element={<CategoryPage />} />
             <Route path="bookmark" element={<BookmarkPage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="profile" element={<ProfilePage />} />

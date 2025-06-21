@@ -6,9 +6,20 @@ import ScrollButton from '../common/ScrollButton';
 const RecipeSection = ({ title, recipes, icon, sectionType }) => {
   const scrollRef = useRef(null);
   
-  // Konfigurasi berdasarkan section type
-  const showImage = sectionType === 'banyakDisukai';
+  // PERBAIKAN: Konfigurasi berdasarkan section type
+  // Semua section akan menampilkan gambar jika URL tersedia
+  const showImage = true; // Ubah dari: sectionType === 'banyakDisukai'
   const isGridLayout = sectionType === 'topMenuHemat' || sectionType === 'topAndalan';
+  
+  // Debug logging untuk melihat konfigurasi
+  React.useEffect(() => {
+    console.log('🔧 RecipeSection Config:', {
+      sectionType,
+      showImage,
+      isGridLayout,
+      recipesCount: recipes?.length || 0
+    });
+  }, [sectionType, showImage, isGridLayout, recipes]);
   
   const handleScroll = (direction) => {
     if (scrollRef.current) {
@@ -58,15 +69,28 @@ const RecipeSection = ({ title, recipes, icon, sectionType }) => {
         {isGridLayout ? (
           // Grid Layout untuk Top Menu Hemat & Top Andalan
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {recipes.map((recipe, index) => (
-              <RecipeCard 
-                key={recipe._id || recipe.item_id || index}
-                recipe={recipe} 
-                index={index} 
-                cardType="simple" 
-                isGridLayout={true}
-              />
-            ))}
+            {recipes.map((recipe, index) => {
+              // PERBAIKAN: Tetap coba tampilkan gambar jika URL tersedia
+              const hasImageUrl = recipe['Image URL'];
+              const cardType = hasImageUrl ? 'image' : 'simple';
+              
+              console.log('🎯 Grid Card:', {
+                index,
+                hasImageUrl,
+                cardType,
+                title: recipe['Title Cleaned'] || recipe.Title
+              });
+              
+              return (
+                <RecipeCard 
+                  key={recipe._id || recipe.item_id || index}
+                  recipe={recipe} 
+                  index={index} 
+                  cardType={cardType} // Dinamis berdasarkan URL
+                  isGridLayout={true}
+                />
+              );
+            })}
           </div>
         ) : (
           // Horizontal Scroll Layout untuk Banyak Disukai
@@ -75,15 +99,29 @@ const RecipeSection = ({ title, recipes, icon, sectionType }) => {
             className="flex space-x-6 overflow-x-auto scrollbar-hide pb-4"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {recipes.map((recipe, index) => (
-              <RecipeCard 
-                key={recipe._id || recipe.item_id || index}
-                recipe={recipe} 
-                index={index} 
-                cardType={showImage ? 'image' : 'simple'} 
-                isGridLayout={false}
-              />
-            ))}
+            {recipes.map((recipe, index) => {
+              // PERBAIKAN: Dinamis berdasarkan URL gambar
+              const hasImageUrl = recipe['Image URL'];
+              const cardType = hasImageUrl && showImage ? 'image' : 'simple';
+              
+              console.log('🎯 Scroll Card:', {
+                index,
+                hasImageUrl,
+                showImage,
+                cardType,
+                title: recipe['Title Cleaned'] || recipe.Title
+              });
+              
+              return (
+                <RecipeCard 
+                  key={recipe._id || recipe.item_id || index}
+                  recipe={recipe} 
+                  index={index} 
+                  cardType={cardType} // Dinamis berdasarkan URL
+                  isGridLayout={false}
+                />
+              );
+            })}
           </div>
         )}
       </div>

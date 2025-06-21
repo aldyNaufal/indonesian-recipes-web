@@ -1,5 +1,5 @@
 // httpClient.js - HTTP request utilities
-import { baseUrl } from './config.js';
+import { baseUrl } from '../config/config.js';
 
 export async function handleResponse(response) {
   if (!response.ok) {

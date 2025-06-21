@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import bgImage from "../assets/bg-login.png";
-import leftImage from "../assets/login (1).jpg";
-import { apiPost } from "../utils/httpClient";
+import bgImage from "../../assets/bg-login.png";
+import leftImage from "../../assets/login (1).jpg";
+import { apiPost } from "../../utils/httpClient";
 import {
   showSuccessAlert,
   showErrorAlert,
   showLoadingAlert,
   hideLoadingAlert,
-} from "../utils/alerts";
-import { useAuth } from "../context/AuthContext";
+} from "../../utils/alerts";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");

@@ -1,11 +1,11 @@
 import React from 'react';
 import { Users, Lightbulb, Target, Heart } from 'lucide-react';
-import radith from "../assets/radith.png";
-import supip from "../assets/supip.png";
-import me from "../assets/me.png";
-import farid from "../assets/farid.png";
-import ali from "../assets/ali.png";
-import haikal from "../assets/haikal.png";
+import radith from "../../assets/radith.png";
+import supip from "../../assets/supip.png";
+import me from "../../assets/me.png";
+import farid from "../../assets/farid.png";
+import ali from "../../assets/ali.png";
+import haikal from "../../assets/haikal.png";
 
 const AboutUs = () => {
   const teamMembers = [

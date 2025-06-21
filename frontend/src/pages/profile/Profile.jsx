@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiGet } from "../utils/httpClient";
-import { showErrorAlert, showConfirmationAlert, showSuccessAlert } from "../utils/alerts";
-import { useAuth } from "../context/AuthContext";
+import { apiGet } from "../../utils/httpClient";
+import { showErrorAlert, showConfirmationAlert, showSuccessAlert } from "../../utils/alerts";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProfilePage() {
   const navigate = useNavigate();

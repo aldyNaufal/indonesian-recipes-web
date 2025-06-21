@@ -1,41 +1,108 @@
 // src/components/recipe/RecipeCard.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RecipeImage from './RecipeImage';
 
 const RecipeCard = ({ 
   recipe, 
   index, 
-  cardType = 'image', // 'image' | 'simple'
+  cardType = 'auto',
   isGridLayout = false 
 }) => {
   const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
 
-  const handleRecipeClick = (recipeId) => {
-    navigate(`/resep/${recipeId}`);
+  // AUTO-DETECT: Tentukan cardType berdasarkan ketersediaan gambar
+  const actualCardType = cardType === 'auto' 
+    ? (recipe['Image URL'] ? 'image' : 'simple')
+    : cardType;
+
+  // PERBAIKAN: Gunakan item_id sebagai ID utama
+  const handleRecipeClick = () => {
+    const recipeId = recipe.item_id || recipe.id || recipe._id;
+    if (recipeId) {
+      navigate(`/resep/${recipeId}`);
+    } else {
+      console.error('Recipe ID not found:', recipe);
+    }
   };
-
+  
   const getRating = (recipe) => {
     const rating = recipe.total_rating || recipe.rating || recipe.Rating;
     if (!rating) return 'N/A';
     return typeof rating === 'number' ? rating.toFixed(1) : rating;
   };
 
+  const handleImageLoad = () => {
+    console.log('✅ RecipeCard: Image loaded successfully');
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    console.log('❌ RecipeCard: Image failed to load');
+    setImageError(true);
+  };
+
+  // PERBAIKAN 4: Fungsi optimasi URL yang lebih robust
+  const getOptimizedImageUrl = (originalUrl) => {
+    if (!originalUrl) return null;
+    
+    try {
+      // Validasi URL
+      const url = new URL(originalUrl);
+      
+      // Hindari double encoding
+      if (originalUrl.includes('wsrv.nl')) {
+        return originalUrl; // Sudah dioptimasi
+      }
+      
+      // Gunakan wsrv.nl untuk optimasi
+      const optimizedUrl = `https://wsrv.nl/?url=${encodeURIComponent(originalUrl)}&w=680&h=400&fit=cover&output=webp`;
+      
+      console.log('🖼️ Image URL optimization:', {
+        original: originalUrl,
+        optimized: optimizedUrl
+      });
+      
+      return optimizedUrl;
+    } catch (error) {
+      console.error('Invalid image URL:', originalUrl, error);
+      return originalUrl; // Return original jika gagal
+    }
+  };
+
   // Card dengan gambar
-  if (cardType === 'image') {
+  if (actualCardType === 'image') {
+    const originalImageUrl = recipe['Image URL'];
+    const optimizedImageUrl = getOptimizedImageUrl(originalImageUrl);
+    
     return (
       <div 
         key={recipe.item_id || recipe._id || index} 
         className="flex-none w-80 bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer hover:scale-105 transform"
-        onClick={() => handleRecipeClick(recipe.item_id || recipe._id)}
+        onClick={handleRecipeClick}
       >
-        {/* Image Section */}
-        <div className="aspect-video bg-gray-200 overflow-hidden">
-          <RecipeImage
-            src={recipe['Image URL']}
-            alt={recipe['Title Cleaned'] || 'Recipe'}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-          />
+        {/* PERBAIKAN 5: Image Section yang lebih simple */}
+        <div className="aspect-video bg-gray-200 overflow-hidden relative">
+          {optimizedImageUrl && !imageError ? (
+            <RecipeImage
+              src={optimizedImageUrl}
+              alt={recipe['Title Cleaned'] || 'Recipe'}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              fallbackSrc={originalImageUrl} // Gunakan original sebagai fallback
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+              <div className="text-center">
+                <div className="text-4xl mb-2">🍽️</div>
+                <div className="text-xs text-gray-600">
+                  {!originalImageUrl ? 'No Image Available' : 'Image Failed to Load'}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Content Section */}
@@ -50,17 +117,6 @@ const RecipeCard = ({
             </span>
           </div>
           
-          <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
-            <span className="flex items-center gap-1">
-              <span className="text-base">🥘</span>
-              {recipe['Total Ingredients'] || 0} bahan
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="text-base">📝</span>
-              {recipe['Total Steps'] || 0} langkah
-            </span>
-          </div>
-          
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="text-yellow-500 text-lg">⭐</span>
             <span className="text-lg font-semibold text-gray-700">
@@ -69,7 +125,13 @@ const RecipeCard = ({
           </div>
           
           <div className="mt-4 pt-3 border-t border-gray-100">
-            <button className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium">
+            <button 
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click
+                handleRecipeClick();
+              }}
+            >
               Lihat Resep
             </button>
           </div>
@@ -85,9 +147,8 @@ const RecipeCard = ({
       className={`bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-105 transform p-6 ${
         isGridLayout ? 'w-full' : 'flex-none w-80'
       }`}
-      onClick={() => handleRecipeClick(recipe._id || recipe.item_id)}
+      onClick={handleRecipeClick}
     >
-      {/* Default Image Icon */}
       <div className="flex justify-center mb-4">
         <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
           <span className="text-2xl">🍽️</span>
@@ -120,7 +181,13 @@ const RecipeCard = ({
       )}
       
       <div className="mt-4 pt-3 border-t border-gray-100">
-        <button className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium">
+        <button 
+          className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click
+            handleRecipeClick();
+          }}
+        >
           Lihat Resep
         </button>
       </div>

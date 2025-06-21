@@ -81,4 +81,24 @@ export default defineConfig({
   build: {
     outDir: "docs",
   },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api/auth': {
+        target: 'http://localhost:3000',  // Auth backend
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/user': {
+        target: 'http://localhost:3000',  // Auth backend
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/recommendations': {
+        target: 'http://localhost:5000',  // ML backend
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  }
 });

@@ -16,9 +16,15 @@ export class RecipeAPI {
     return await publicApiGet(endpoint);
   }
 
-  // Get recipe by ID
-  static async getRecipeById(id) {
-    return await publicApiGet(`/api/recipes/${id}`);
+  // Get recipe by ID - FIXED
+    static async getRecipeById(id) {
+    try {
+      const response = await publicApiGet(`/api/recipes/${id}`);
+      return response;
+    } catch (error) {
+      console.error('❌ API: Error getting recipe by ID:', error);
+      throw error;
+    }
   }
 
   // Get all categories

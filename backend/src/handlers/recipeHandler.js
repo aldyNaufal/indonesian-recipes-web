@@ -53,23 +53,111 @@ const getAllRecipes = async (request, h) => {
   }).code(200);
 };
 
+// Backend handler dengan debug logging
 const getRecipeById = async (request, h) => {
   const { id } = request.params;
   const db = getDb();
-
-  const recipe = await db
-    .collection('resep')
-    .findOne({ id }, { projection: { _id: 0 } });
-
-  console.log(recipe);
-
-  if (!recipe) {
-    return h
-      .response({ error: true, message: 'Resep tidak ditemukan' })
-      .code(404);
+  
+  try {
+    console.log('🔍 DEBUG: Searching for recipe with ID:', id);
+    console.log('🔍 DEBUG: ID type:', typeof id);
+    
+    // Debug: Cek beberapa dokumen di collection untuk melihat struktur data
+    const sampleDocs = await db.collection('resep').find({}).limit(3).toArray();
+    console.log('🔍 DEBUG: Sample documents in collection:');
+    sampleDocs.forEach((doc, index) => {
+      console.log(`Sample ${index + 1}:`, {
+        _id: doc._id,
+        id: doc.id,
+        item_id: doc.item_id,
+        title: doc.Title || doc['Title Cleaned']
+      });
+    });
+    
+    // Coba cari dengan berbagai kemungkinan
+    console.log('🔍 DEBUG: Trying to find with item_id...');
+    let recipe = await db.collection('resep').findOne({ item_id: id });
+    console.log('🔍 DEBUG: Result with item_id:', recipe ? 'FOUND' : 'NOT FOUND');
+    
+    if (!recipe) {
+      console.log('🔍 DEBUG: Trying to find with id field...');
+      recipe = await db.collection('resep').findOne({ id: id });
+      console.log('🔍 DEBUG: Result with id:', recipe ? 'FOUND' : 'NOT FOUND');
+    }
+    
+    if (!recipe) {
+      console.log('🔍 DEBUG: Trying to find with string conversion...');
+      recipe = await db.collection('resep').findOne({ item_id: String(id) });
+      console.log('🔍 DEBUG: Result with string item_id:', recipe ? 'FOUND' : 'NOT FOUND');
+    }
+    
+    if (!recipe) {
+      console.log('🔍 DEBUG: Trying to find with number conversion...');
+      const numId = parseInt(id);
+      if (!isNaN(numId)) {
+        recipe = await db.collection('resep').findOne({ item_id: numId });
+        console.log('🔍 DEBUG: Result with number item_id:', recipe ? 'FOUND' : 'NOT FOUND');
+      }
+    }
+    
+    // Debug: Coba cari yang mirip (partial match)
+    if (!recipe) {
+      console.log('🔍 DEBUG: Searching for similar IDs...');
+      const similarRecipes = await db.collection('resep').find({
+        $or: [
+          { item_id: new RegExp(id, 'i') },
+          { id: new RegExp(id, 'i') }
+        ]
+      }).limit(5).toArray();
+      
+      console.log('🔍 DEBUG: Similar recipes found:', similarRecipes.length);
+      similarRecipes.forEach((doc, index) => {
+        console.log(`Similar ${index + 1}:`, {
+          _id: doc._id,
+          id: doc.id,
+          item_id: doc.item_id,
+          title: doc.Title || doc['Title Cleaned']
+        });
+      });
+    }
+    
+    if (!recipe) {
+      console.log('❌ DEBUG: Recipe not found with any method');
+      return h.response({
+        error: true,
+        message: 'Resep tidak ditemukan',
+        debug: {
+          searchedId: id,
+          idType: typeof id,
+          collectionCount: await db.collection('resep').countDocuments()
+        }
+      }).code(404);
+    }
+    
+    console.log('✅ DEBUG: Recipe found:', {
+      _id: recipe._id,
+      id: recipe.id,
+      item_id: recipe.item_id,
+      title: recipe.Title || recipe['Title Cleaned']
+    });
+    
+    // Remove _id from response
+    const { _id, ...recipeWithoutId } = recipe;
+    
+    return h.response({
+      error: false,
+      message: 'Resep berhasil ditemukan',
+      data: recipeWithoutId
+    }).code(200);
+    
+  } catch (error) {
+    console.error('❌ DEBUG: Error in getRecipeById:', error);
+    return h.response({
+      error: true,
+      message: 'Terjadi kesalahan saat mengambil data resep',
+      debug: error.message
+    }).code(500);
   }
-
-  return h.response({ error: false, data: recipe }).code(200);
 };
 
 // Handler untuk mendapatkan categories (PUBLIC - TIDAK PERLU LOGIN)

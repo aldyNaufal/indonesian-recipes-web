@@ -1,8 +1,8 @@
 // src/pages/UbahPassword.jsx
 import React, { useState } from "react";
-import { showErrorAlert, showSuccessAlert } from "../utils/alerts";
+import { showErrorAlert, showSuccessAlert } from "../../utils/alerts";
 import { useNavigate } from "react-router-dom";
-import { apiPut } from "../utils/httpClient";
+import { apiPut } from "../../utils/httpClient";
 
 export default function UbahPassword() {
   const navigate = useNavigate();

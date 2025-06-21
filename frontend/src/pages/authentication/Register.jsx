@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { showSuccessAlert, showErrorAlert, showLoadingAlert, hideLoadingAlert } from "../utils/alerts";
-import { apiPost } from "../utils/httpClient";
+import { showSuccessAlert, showErrorAlert, showLoadingAlert, hideLoadingAlert } from "../../utils/alerts";
+import { apiPost } from "../../utils/httpClient";
 import { useNavigate } from "react-router-dom";
 
 // Import images - pastikan path sesuai dengan struktur project Anda
-import bgImage from "../assets/bg-login.png"; // Sesuaikan dengan path gambar background
-import leftImage from "../assets/regis.jpg"; // Sesuaikan dengan path gambar kiri
+import bgImage from "../../assets/bg-login.png"; // Sesuaikan dengan path gambar background
+import leftImage from "../../assets/regis.jpg"; // Sesuaikan dengan path gambar kiri
 
 export default function Register() {
   const [name, setName] = useState("");

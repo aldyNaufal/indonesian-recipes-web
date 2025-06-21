@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Clock, Users, Loader2, Star, ChefHat, RefreshCw } from 'lucide-react';
-import { publicApiGet } from '../utils/httpClient';
+import { publicApiGet } from '../../utils/httpClient';
 
 
-const RecipeFilterApp = () => {
+const Recipe = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -473,10 +473,10 @@ const RecipeFilterApp = () => {
                       onChange={(e) => setTopN(parseInt(e.target.value))}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
                     >
-                      <option value="5">5 resep</option>
-                      <option value="10">10 resep</option>
+                      <option value="6">6 resep</option>
+                      <option value="9">9 resep</option>
+                      <option value="12">12 resep</option>
                       <option value="15">15 resep</option>
-                      <option value="20">20 resep</option>
                     </select>
                   </div>
                 </div>
@@ -699,4 +699,4 @@ const RecipeFilterApp = () => {
   );
 };
 
-export default RecipeFilterApp;
+export default Recipe;
