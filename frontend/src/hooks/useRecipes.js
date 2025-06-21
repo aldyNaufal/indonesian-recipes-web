@@ -1,6 +1,7 @@
 // src/hooks/useRecipes.js
 import { useState, useEffect } from 'react';
-import { RecipeAPI, loadGuestRecipes } from '../utils/api';
+import { loadGuestRecipes } from '../utils/recipeService';
+import { RecipeAPI } from '../utils/recipeApi';
 
 export const useRecipes = (isLoggedIn) => {
   const [guestRecipes, setGuestRecipes] = useState({

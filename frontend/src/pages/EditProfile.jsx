@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { showSuccessAlert, showErrorAlert } from "../utils/alerts";
-import { apiPut } from "../utils/api";
+import { apiPut } from "../utils/httpClient";
 // import toBase64  from "../utils/file";
 
 export default function EditProfilePage() {

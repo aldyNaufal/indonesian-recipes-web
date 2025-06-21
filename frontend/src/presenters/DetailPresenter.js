@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiGet, apiPost } from '../utils/api';
+import { apiGet, apiPost } from '../utils/httpClient';
 import html2pdf from 'html2pdf.js';
 import {
   showErrorAlert,

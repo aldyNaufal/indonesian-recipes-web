@@ -44,6 +44,7 @@ export default function App() {
           {/* Routes tanpa Layout */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/set-preferences" element={<PreferencesPage />} />
           
           {/* Routes dengan Layout */}
           <Route path="/" element={<Layout />}>
@@ -54,7 +55,6 @@ export default function App() {
             <Route path="about" element={<AboutPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="ubah-profil" element={<EditProfilePage />} />
-            <Route path="set-preferences" element={<PreferencesPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

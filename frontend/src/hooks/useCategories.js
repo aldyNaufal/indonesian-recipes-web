@@ -1,6 +1,8 @@
 // src/hooks/useCategories.js
 import { useState, useEffect } from 'react';
-import { RecipeAPI, loadCategories } from '../utils/api';
+import { loadCategories } from '../utils/recipeService';
+import { RecipeAPI } from '../utils/recipeApi'
+
 
 export const useCategories = () => {
   const [categories, setCategories] = useState([]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Clock, Users, Loader2, Star, ChefHat, RefreshCw } from 'lucide-react';
-import { publicApiGet } from '../utils/api';
+import { publicApiGet } from '../utils/httpClient';
 
 
 const RecipeFilterApp = () => {
@@ -444,7 +444,7 @@ const RecipeFilterApp = () => {
                       <option value="">Semua Tingkat</option>
                       <option value="Cepat & Mudah">Cepat & Mudah</option>
                       <option value="Butuh Usaha">Butuh Usaha</option>
-                      <option value="Sulit">Sulit</option>
+                      <option value="Level Dewa Masak">Level Dewa Masak</option>
                     </select>
                   </div>
 

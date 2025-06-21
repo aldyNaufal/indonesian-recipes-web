@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet, apiDelete } from '../utils/api';
+import { apiGet, apiDelete } from '../utils/httpClient';
 import {
   showConfirmationAlert, showSuccessAlert, showErrorAlert
 } from '../utils/alerts';
