@@ -1,11 +1,20 @@
+# ===================================================================
+# Flask API Dockerfile (./flask-api/Dockerfile)
+# ===================================================================
 FROM python:3.9-slim
 
-WORKDIR /code
+WORKDIR /app
 
+# Copy requirements
 COPY requirements.txt .
+
+# Install dependencies
 RUN pip install -r requirements.txt
 
+# Copy source code
 COPY . .
 
-EXPOSE 7860
+# Environment variables akan diambil dari .env via docker-compose
+EXPOSE 5000
+
 CMD ["python", "app.py"]

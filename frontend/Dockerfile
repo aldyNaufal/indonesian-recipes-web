@@ -1,18 +1,32 @@
-# Multi-stage build untuk optimasi ukuran image
-# Stage 1: Build stage
-FROM node:18-alpine AS builder
+FROM node:18-alpine
+
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm ci 
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
+
+# Build arguments from .env
+ARG VITE_API_URL
+ARG VITE_ML_API_URL
+ARG VITE_FLASK_API_URL
+
+# Set environment variables
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_ML_API_URL=${VITE_ML_API_URL}
+ENV VITE_FLASK_API_URL=${VITE_FLASK_API_URL}
+
+# Build the app
 RUN npm run build
 
-# Stage 2: Production stage
+# Serve static files
 FROM nginx:alpine
-# Copy built files dari builder stage - PERBAIKI INI
-# COPY --from=builder /app/dist /usr/share/nginx/html
-# atau jika build folder bernama 'build':
-COPY --from=builder /app/docs /usr/share/nginx/html
-
+COPY --from=0 /app/docs /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
