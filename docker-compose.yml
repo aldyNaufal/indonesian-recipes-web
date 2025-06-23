@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -40,6 +39,9 @@ services:
       - .env  # Root .env file
     environment:
       - PORT=${FLASK_PORT}
+      # PENTING: Pastikan Flask mendengarkan di port yang konsisten
+      - FLASK_RUN_PORT=${FLASK_PORT}
+      - FLASK_RUN_HOST=0.0.0.0
     ports:
       - "${FLASK_DEBUG_PORT}:${FLASK_PORT}"  # Expose untuk debugging
     depends_on:
