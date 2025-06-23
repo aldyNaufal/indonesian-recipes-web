@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   backend:
     build: ./backend
@@ -27,40 +28,40 @@ services:
     networks:
       - app-network
 
-    flask-api:
-      build: ./flask-api
-      container_name: flask-api
-      restart: unless-stopped
-      environment:
-        - FLASK_ENV=production  # Changed to production
-        - FLASK_DEBUG=False     # Disable debug in production
-        - SECRET_KEY=e3b427cbd08cace80fca072c4c1b0db319d4be5a6799fecc092d10ebed30a7c9
-        - AUTH_BACKEND_URL=http://backend:3000  # Use container name
-        - JWT_SECRET_KEY=5799f39d3045afe7aacdeac7e65888e53e1efb824b9c46a6c306dd5b71a89a488ada8049ec4c4736cb064877ea345c4c0b0449adad92e28124739351db7c2799
-        - JWT_ALGORITHM=HS256
-        - MAX_RECOMMENDATIONS=50
-        - DEFAULT_RECOMMENDATIONS=10
-        - MODEL_PATH=./models/
-        - NODE_API_URL=http://backend:3000/api  # Use container name
-        - PORT=5000
-        - LOG_LEVEL=INFO
-      expose:
-        - "5000"  # Only expose internally
-      networks:
-        - app-network
+  flask-api:
+    build: ./flask-api
+    container_name: flask-api
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+      - SECRET_KEY=e3b427cbd08cace80fca072c4c1b0db319d4be5a6799fecc092d10ebed30a7c9
+      - AUTH_BACKEND_URL=http://backend:3000
+      - JWT_SECRET_KEY=5799f39d3045afe7aacdeac7e65888e53e1efb824b9c46a6c306dd5b71a89a488ada8049ec4c4736cb064877ea345c4c0b0449adad92e28124739351db7c2799
+      - JWT_ALGORITHM=HS256
+      - MAX_RECOMMENDATIONS=50
+      - DEFAULT_RECOMMENDATIONS=10
+      - MODEL_PATH=./models/
+      - NODE_API_URL=http://backend:3000/api
+      - PORT=5000
+      - LOG_LEVEL=INFO
+    expose:
+      - "5000"
+    networks:
+      - app-network
 
   nginx-proxy:
     image: nginx:alpine
     container_name: nginx-proxy
     restart: unless-stopped
     ports:
-      - "8080:80"   # HANYA HTTP - HTTPS di-handle host nginx
+      - "8080:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      # TIDAK PERLU SSL VOLUME karena host nginx yang handle HTTPS
     depends_on:
       - frontend
       - backend
+      - flask-api  # Tambahkan dependency ke flask-api
     networks:
       - app-network
 
